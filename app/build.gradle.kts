@@ -1,3 +1,13 @@
+import java.util.Properties
+
+// The version lives in version.properties at the repo root so it survives clean builds and is
+// visible in git history. tools/build-apk.sh bumps versionCode before every build it makes.
+val versionProps = Properties().apply {
+    rootProject.file("version.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val buildNumber = (versionProps.getProperty("versionCode") ?: "1").trim().toInt()
+val marketingVersion = (versionProps.getProperty("marketingVersion") ?: "1.0").trim()
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -16,8 +26,8 @@ android {
         applicationId = "com.iwankurnia.hub"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = "$marketingVersion.$buildNumber"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

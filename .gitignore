@@ -8,8 +8,10 @@
 /captures/
 .externalNativeBuild/
 .cxx/
+# Built APKs live in dist/ (ignored); *.apk elsewhere is ignored too.
 *.apk
 *.aab
 .kotlin/
 .superpowers/
 .worktrees/
+/dist/

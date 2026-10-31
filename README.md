@@ -22,9 +22,16 @@ Nothing leaves the phone: there is no network permission.
 
 ## Build and install
 
+Every APK build bumps `versionCode` in `version.properties` and names the
+file after the version (`versionName` = `marketingVersion.versionCode`):
+
 ```bash
-./gradlew :app:assembleDebug
+./tools/build-apk.sh
 ```
+
+The APK lands in `dist/hub-<version>.apk` (the folder is git-ignored; the
+bumped `version.properties` is committed with the build). A plain
+`./gradlew :app:assembleDebug` still works but does not bump the version.
 
 Connect the phone with USB debugging on, then:
 
