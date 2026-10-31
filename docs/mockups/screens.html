@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Superpowers Brainstorming</title>
+  <style>
+    /*
+     * BRAINSTORM COMPANION FRAME TEMPLATE
+     *
+     * This template provides a consistent frame with:
+     * - OS-aware light/dark theming
+     * - Header branding and connection status
+     * - Scrollable main content area
+     * - CSS helpers for common UI patterns
+     *
+     * Content is injected via placeholder comment in #frame-content.
+     */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e5e7;
+      --border: #d1d1d6;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --success: #34c759;
+      --warning: #ff9f0a;
+      --error: #ff3b30;
+      --selected-bg: #e8f4fd;
+      --selected-border: #0071e3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1d1d1f;
+        --bg-secondary: #2d2d2f;
+        --bg-tertiary: #3d3d3f;
+        --border: #424245;
+        --text-primary: #f5f5f7;
+        --text-secondary: #86868b;
+        --text-tertiary: #636366;
+        --accent: #0a84ff;
+        --accent-hover: #409cff;
+        --selected-bg: rgba(10, 132, 255, 0.15);
+        --selected-border: #0a84ff;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* ===== FRAME STRUCTURE ===== */
+    .brand { display: flex; align-items: center; min-width: 0; overflow: hidden; color: var(--text-secondary); line-height: 1; }
+    .brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; line-height: 1; }
+    .brand-copy { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; transform: translateY(-1px); }
+    .brand-logo { display: block; height: 1em; width: auto; max-width: 180px; flex-shrink: 0; filter: invert(1); }
+    @media (prefers-color-scheme: dark) {
+      .brand-logo { filter: none; }
+    }
+    .status { font-size: 0.7rem; color: var(--status-color, var(--success)); display: flex; align-items: center; gap: 0.4rem; justify-self: end; white-space: nowrap; line-height: 1; }
+    .status::before { content: ''; width: 6px; height: 6px; background: var(--status-color, var(--success)); border-radius: 50%; }
+
+    .main { flex: 1; overflow-y: auto; }
+    #frame-content { padding: 2rem; min-height: 100%; }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-height: 42px;
+    }
+    .header .brand { justify-self: start; width: 100%; font-size: 0.75rem; line-height: 1; }
+    .header .status { grid-column: 2; line-height: 1; }
+    .header span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .header .selected-text {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .section { margin-bottom: 2rem; }
+    .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* ===== OPTIONS (for A/B/C choices) ===== */
+    .options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .option {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+    .option .letter {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .option.selected .letter { background: var(--accent); color: white; }
+    .option .content { flex: 1; }
+    .option .content h3 { font-size: 0.95rem; margin-bottom: 0.15rem; }
+    .option .content p { color: var(--text-secondary); font-size: 0.85rem; margin: 0; }
+
+    /* ===== CARDS (for showing designs/mockups) ===== */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card.selected { border-color: var(--selected-border); border-width: 2px; }
+    .card-image { background: var(--bg-tertiary); aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+    .card-body { padding: 1rem; }
+    .card-body h3 { margin-bottom: 0.25rem; }
+    .card-body p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* ===== MOCKUP CONTAINER ===== */
+    .mockup {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .mockup-header {
+      background: var(--bg-tertiary);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-body { padding: 1.5rem; }
+
+    /* ===== SPLIT VIEW (side-by-side comparison) ===== */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+
+    /* ===== PROS/CONS ===== */
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .pros, .cons { background: var(--bg-secondary); border-radius: 8px; padding: 1rem; }
+    .pros h4 { color: var(--success); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .cons h4 { color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .pros ul, .cons ul { margin-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+    .pros li, .cons li { margin-bottom: 0.25rem; }
+
+    /* ===== PLACEHOLDER (for mockup areas) ===== */
+    .placeholder {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    /* ===== INLINE MOCKUP ELEMENTS ===== */
+    .mock-nav { background: var(--accent); color: white; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; font-size: 0.9rem; }
+    .mock-sidebar { background: var(--bg-tertiary); padding: 1rem; min-width: 180px; }
+    .mock-content { padding: 1.5rem; flex: 1; }
+    .mock-button { background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .mock-input { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <!-- BRANDING -->
+    <div class="status">Connecting…</div>
+  </div>
+
+  <div class="main">
+    <div id="frame-content">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap">
+
+<style>
+  .grid { display:flex; gap: 28px; flex-wrap: wrap; justify-content:center; margin: 20px 0 40px; }
+  .shot { width: 360px; }
+  .shot h3 { margin: 12px 0 2px; font-size: 16px; }
+  .shot p { margin: 0; opacity:.8; font-size: 13.5px; }
+  .phone { width: 360px; height: 720px; border-radius: 40px; background: #F7F9FF; color: #191C20; box-shadow: 0 12px 40px rgba(0,0,0,.25), inset 0 0 0 8px #111; overflow: hidden; position: relative; font-family: "Google Sans", Roboto, system-ui, sans-serif; }
+  .statusbar { height: 44px; display:flex; justify-content:space-between; align-items:center; padding: 0 28px; font-size: 13px; font-weight: 500; }
+  .appbar { padding: 8px 20px 4px; display:flex; justify-content:space-between; align-items:flex-end; }
+  .appbar .title { font-size: 34px; font-weight: 600; letter-spacing: -.5px; line-height: 1.1; }
+  .icons { display:flex; gap:14px; font-size:20px; margin-bottom:8px; }
+  .tabs { display:flex; padding: 8px 16px 0; border-bottom: 1px solid #E0E3EB; }
+  .tab { flex:1; text-align:center; padding: 10px 0 12px; font-size: 14px; font-weight: 500; color:#43474E; position:relative; display:flex; justify-content:center; align-items:center; gap:6px; }
+  .tab.on { color:#0B57D0; }
+  .tab.on::after { content:""; position:absolute; left: 20%; right: 20%; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background:#0B57D0; }
+  .count { background:#0B57D0; color:#fff; font-size: 11px; font-weight:600; min-width: 20px; height: 20px; border-radius: 10px; display:flex; align-items:center; justify-content:center; padding: 0 6px; }
+  .tab:not(.on) .count { background:#C3C6CF; color:#191C20; }
+  .chips { display:flex; gap: 8px; padding: 8px 16px 8px; overflow:hidden; border-bottom: 1px solid #E0E3EB; }
+  .chip { height: 30px; padding: 0 12px; border-radius: 10px; border: 1px solid #C3C6CF; font-size: 12.5px; font-weight: 500; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .chip.on { background: #D3E3FD; border-color: transparent; color: #041E49; }
+  .chip img { width: 14px; height: 14px; }
+  .list { display:flex; flex-direction:column; background:#fff; }
+  .dateband { background:#E8ECF4; color:#43474E; font-size: 12px; font-weight: 600; padding: 5px 16px; display:flex; justify-content:space-between; }
+  .dateband span:last-child { font-weight: 400; }
+  .row { display:flex; gap: 12px; padding: 9px 16px 9px 12px; align-items:center; border-bottom: 1px solid #EDEFF4; border-left: 4px solid transparent; background:#fff; position:relative; }
+  .row.unread { border-left-color: #0B57D0; }
+  .row.snoozed { border-left-color: #E5A900; }
+  .row.sel { background:#D3E3FD; }
+  .row.deleted { opacity:.75; }
+  .icon { width: 34px; height: 34px; border-radius: 9px; display:flex; align-items:center; justify-content:center; flex:none; position:relative; color:#fff; font-weight:600; font-size: 11px; }
+  .icon img { width: 20px; height: 20px; }
+  .icon .zz { position:absolute; right:-5px; bottom:-5px; width: 16px; height: 16px; border-radius: 50%; background:#8A5A00; color:#fff; border: 2px solid #fff; font-size: 10px; display:flex; align-items:center; justify-content:center; }
+  .check { width: 34px; height: 34px; border-radius: 9px; background:#0B57D0; color:#fff; display:flex; align-items:center; justify-content:center; flex:none; font-size: 18px; }
+  .body { flex:1; min-width:0; }
+  .line1 { display:flex; justify-content:space-between; align-items:baseline; gap: 8px; }
+  .name { font-size: 14px; color:#191C20; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .unread .name { font-weight: 700; }
+  .time { font-size: 11.5px; color:#43474E; flex:none; }
+  .unread .time { color:#0B57D0; font-weight: 600; }
+  .msg { font-size: 12.5px; color:#5B5F66; margin-top: 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .unread .msg { color:#191C20; }
+  .snz { font-size: 11px; display:inline-flex; align-items:center; gap:4px; margin-top: 2px; height: 18px; padding: 0 7px; border-radius: 9px; background:#FFE2A8; color:#4A3200; font-weight:600; }
+  .homebar { position:absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 4px; border-radius: 2px; background: #191C20; opacity:.6; z-index: 9; }
+  .swipewrap { position:relative; overflow:hidden; }
+  .swipewrap .under { position:absolute; inset:0; display:flex; align-items:center; padding: 0 20px; font-weight:600; font-size: 14px; gap: 8px; }
+  .under.read { background:#B7F2C7; color:#0B3D1A; justify-content:flex-start; }
+  .under.del { background:#FFDAD6; color:#410002; justify-content:flex-end; }
+  .shift-r { transform: translateX(110px); } .shift-l { transform: translateX(-110px); }
+  .toast { position:absolute; left: 16px; right: 16px; bottom: 28px; background:#2F3237; color:#fff; border-radius: 14px; padding: 12px 16px; font-size: 13.5px; display:flex; justify-content:space-between; z-index: 6; }
+  .toast b { color:#A8C7FA; font-weight: 600; }
+  .selbar { position:absolute; left:0; right:0; top:0; height: 96px; background:#D3E3FD; display:flex; align-items:flex-end; padding: 0 20px 12px; gap: 18px; font-weight:600; font-size: 18px; z-index: 3; }
+  .selbar .sp { flex:1; } .selbar .ic { font-size: 20px; font-weight: 400; }
+  .scrim { position:absolute; inset:0; background: rgba(25,28,32,.35); z-index: 6; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:#F7F9FF; border-radius: 28px 28px 0 0; padding: 10px 20px 24px; z-index: 7; }
+  .grab-handle { width: 36px; height: 4px; border-radius: 2px; background:#C3C6CF; margin: 0 auto 14px; }
+  .thread { display:flex; flex-direction:column; gap: 8px; margin: 10px 0 14px; }
+  .bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; background:#E8ECF4; font-size: 13.5px; }
+  .bubble.me { align-self:flex-end; background:#D3E3FD; }
+  .bubble .t { font-size: 11px; color:#43474E; margin-top: 3px; }
+  .meta { font-size: 12px; color:#43474E; display:flex; gap: 14px; margin-top: 2px; }
+  .replybox { height: 44px; border-radius: 22px; background:#fff; display:flex; align-items:center; padding: 0 6px 0 16px; justify-content:space-between; color:#43474E; font-size: 14px; border: 1px solid #E0E3EB; }
+  .replybox .send { width: 34px; height: 34px; border-radius: 50%; background:#0B57D0; color:#fff; display:flex; align-items:center; justify-content:center; }
+  .actions { display:flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .act { height: 32px; padding: 0 12px; border-radius: 16px; background: transparent; border: 1px solid #C3C6CF; color:#191C20; font-size: 12.5px; font-weight: 500; display:flex; align-items:center; gap: 6px; }
+  .act.primary { background:#D3E3FD; border-color: transparent; color:#041E49; }
+  .act.amber { background:#FFF4DB; border-color:transparent; color:#4A3200; }
+  .act.danger { color:#93000A; border-color:#FFB4AB; }
+  .snoozepick { margin-top: 12px; background:#fff; border-radius: 20px; padding: 12px; border: 1px solid #E0E3EB; }
+  .snoozepick .lbl { font-size: 12px; font-weight: 600; color:#43474E; margin: 0 4px 8px; }
+  .snoozepick .opts { display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { height: 44px; border-radius: 14px; background:#FFF4DB; color:#4A3200; display:flex; flex-direction:column; justify-content:center; padding: 0 12px; font-size: 13px; font-weight: 600; }
+  .opt small { font-weight: 400; font-size: 11px; opacity:.8; }
+  .searchbar { margin: 8px 16px 0; height: 52px; border-radius: 26px; background: #E8ECF4; display:flex; align-items:center; padding: 0 18px; gap: 12px; color:#191C20; font-size: 15px; }
+  .searchbar .cur { width: 2px; height: 20px; background:#0B57D0; }
+  .mark { background:#FFE2A8; border-radius: 3px; padding: 0 2px; }
+  .banner { margin: 8px 16px; padding: 10px 14px; border-radius: 14px; background:#FFDAD6; color:#410002; font-size: 12.5px; display:flex; justify-content:space-between; align-items:center; }
+  .banner b { font-weight:600; }
+  .empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height: 400px; gap: 10px; color:#43474E; font-size: 14px; text-align:center; padding: 0 40px; }
+  .empty .big { font-size: 56px; }
+  .restore { font-size: 11px; height: 20px; padding: 0 8px; border-radius: 10px; background:#D3E3FD; color:#041E49; font-weight:600; display:inline-flex; align-items:center; margin-top: 2px; }
+  /* settings */
+  .sgroup { margin: 10px 16px; background:#fff; border-radius: 24px; overflow:hidden; }
+  .sitem { display:flex; align-items:center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid #EDEFF4; font-size: 14px; }
+  .sitem:last-child { border-bottom: none; }
+  .sitem .t { flex:1; } .sitem .t small { display:block; font-size: 12px; color:#43474E; margin-top: 2px; }
+  .sw { width: 48px; height: 28px; border-radius: 14px; background:#C3C6CF; position:relative; flex:none; }
+  .sw::after { content:""; position:absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background:#fff; }
+  .sw.on { background:#0B57D0; } .sw.on::after { left: 24px; }
+  .slabel { font-size: 12px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:#43474E; margin: 16px 28px 0; }
+  .back { font-size: 22px; margin-right: 8px; }
+  .btn { height: 48px; border-radius: 24px; background:#0B57D0; color:#fff; font-weight:600; font-size: 15px; display:flex; align-items:center; justify-content:center; margin: 0 24px; }
+  .btn.ghost { background:transparent; color:#0B57D0; }
+  /* icons */
+  .iconrow { display:flex; gap: 36px; flex-wrap:wrap; justify-content:center; margin: 20px 0 10px; }
+  .iconopt { cursor:pointer; padding: 16px; border-radius: 20px; border: 2px solid transparent; text-align:center; width: 340px; }
+  .iconopt.selected { border-color:#0B57D0; background: rgba(11,87,208,.06); }
+  .iconopt h3 { margin: 12px 0 4px; font-size: 16px; } .iconopt p { margin:0; font-size: 13px; opacity:.8; }
+  .iconset { display:flex; gap: 14px; justify-content:center; align-items:flex-end; }
+  .iconset .lab { font-size: 11px; opacity:.7; margin-top: 6px; }
+  .homescreen { width: 360px; height: 230px; border-radius: 24px; background: linear-gradient(135deg,#1b2a4a,#0b57d0 60%,#6fa8ff); position:relative; overflow:hidden; margin: 0 auto; }
+  .homescreen .dock { position:absolute; bottom: 18px; left: 0; right: 0; display:flex; justify-content:space-around; padding: 0 30px; }
+  .homescreen .app { display:flex; flex-direction:column; align-items:center; gap: 6px; color:#fff; font-size: 11px; }
+  .homescreen .app .sq { width: 56px; height: 56px; border-radius: 16px; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  .shot.dark .phone { background:#101418; color:#E1E2E8; }
+  .dark .tabs { border-bottom-color:#2A2F36; } .dark .tab { color:#C3C6CF; } .dark .tab.on { color:#A8C7FA; } .dark .tab.on::after { background:#A8C7FA; }
+  .dark .chips { border-bottom-color:#2A2F36; } .dark .chip { border-color:#43474E; color:#E1E2E8; } .dark .chip.on { background:#0842A0; color:#D3E3FD; }
+  .dark .list { background:#101418; } .dark .dateband { background:#1D2126; color:#C3C6CF; }
+  .dark .row { background:#101418; border-bottom-color:#1D2126; } .dark .row.unread { border-left-color:#A8C7FA; }
+  .dark .name { color:#E1E2E8; } .dark .msg { color:#8E9199; } .dark .unread .msg { color:#E1E2E8; }
+  .dark .time { color:#8E9199; } .dark .unread .time { color:#A8C7FA; } .dark .icon .zz { border-color:#101418; } .dark .homebar { background:#E1E2E8; }
+
+  .ms { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; -webkit-font-smoothing: antialiased; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  .ms.fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .ms.s20 { font-size: 20px; } .ms.s18 { font-size: 18px; } .ms.s16 { font-size: 16px; } .ms.s14 { font-size: 14px; }
+  .icons .ms { font-size: 26px; color:#191C20; }
+  .dark .icons .ms { color:#E1E2E8; }
+  .selbar .ms { font-size: 24px; color:#041E49; }
+  .act .ms { font-size: 18px; }
+  .sitem .lead { width: 34px; display:flex; align-items:center; justify-content:center; color:#43474E; }
+  .sitem .lead .ms { font-size: 24px; }
+  .sitem .chev { color:#43474E; }
+  .searchbar .ms { color:#43474E; }
+  .under .ms { font-size: 22px; }
+  .snz .ms, .dateband .ms { font-size: 14px; }
+  .opt .ms { font-size: 16px; }
+</style>
+
+<h2>1 · Launcher icon</h2>
+<p class="subtitle">Chosen: A, the inbox tray. Plain, Material You themed (light and dark) and the status-bar glyph.</p>
+<div class="iconrow">
+  <div class="iconopt selected"><div class="iconset">
+      <div><div style="width:72px;height:72px;border-radius:22px;background:#0B57D0;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25)"><svg width="44" height="44" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#fff"/></svg></div><div class="lab">Light</div></div>
+      <div><div style="width:72px;height:72px;border-radius:22px;background:#D3E3FD;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25)"><svg width="44" height="44" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#0B57D0" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#0B57D0" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#0B57D0"/></svg></div><div class="lab">Themed (Material You)</div></div>
+      <div><div style="width:72px;height:72px;border-radius:22px;background:#1D2126;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25)"><svg width="44" height="44" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#A8C7FA" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#A8C7FA" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#A8C7FA"/></svg></div><div class="lab">Themed, dark</div></div>
+      <div><div style="width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25)"><svg width="24" height="24" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#191C20" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#191C20" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#191C20"/></svg></div><div class="lab">Notification</div></div>
+    </div><h3>A · Inbox tray</h3><p>An inbox tray with a dot for "something new". Says "everything lands here".</p></div>
+</div>
+<div class="homescreen">
+  <div class="dock">
+    <div class="app"><div class="sq" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="30"></div>WhatsApp</div>
+    <div class="app"><div class="sq" style="background:#0B57D0"><svg width="34" height="34" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#fff"/></svg></div>Hub</div>
+    <div class="app"><div class="sq" style="background:#D3E3FD"><svg width="34" height="34" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#0B57D0" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#0B57D0" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#0B57D0"/></svg></div>Hub</div><div class="app"><div class="sq" style="background:#1D2126"><svg width="34" height="34" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#A8C7FA" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#A8C7FA" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#A8C7FA"/></svg></div>Hub</div>
+  </div>
+</div>
+<p class="subtitle" style="text-align:center">On a home screen next to WhatsApp (plain, then themed).</p>
+
+<h2 style="margin-top:50px">2 · Screens, now with Material Symbols</h2><p class="subtitle">Light shown; dark follows the system (one dark example at the end).</p><div class="grid">
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div style="padding: 60px 28px 0; text-align:center">
+  <div style="width:96px;height:96px;border-radius:28px;background:#D3E3FD;margin:0 auto 24px;display:flex;align-items:center;justify-content:center"><svg width="56" height="56" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#0B57D0" stroke-width="3.2" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#0B57D0" stroke-width="3.2" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#0B57D0"/></svg></div>
+  <div style="font-size:28px;font-weight:600;letter-spacing:-.3px;line-height:1.15">All your notifications,<br>one list</div>
+  <p style="font-size:14px;color:#43474E;margin:16px 0 0">Hub reads the notifications your apps post and keeps them in one place. Nothing leaves your phone.</p>
+  <div class="sgroup" style="margin:28px 0 0;text-align:left">
+    <div class="sitem"><span class="lead"><span class="ms ">notifications</span></span><div class="t">Notification access<small>Required, so Hub can see and dismiss them</small></div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+    <div class="sitem"><span class="lead"><span class="ms ">alarm</span></span><div class="t">Alarms &amp; reminders<small>Only for snooze wake-ups</small></div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+  </div>
+ </div>
+ <div style="position:absolute;left:0;right:0;bottom:40px"><div class="btn">Allow notification access</div></div><div class="homebar"></div></div><h3>0 · First run: notification access</h3><p>Hub can't see anything until Android grants it notification access. One screen explains why, the button opens the system settings page.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="chips"><div class="chip on">Every app</div><div class="chip "><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row unread"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Jira (via Gmail)</div><div class="time">09:12</div></div><div class="msg">[IDH-2020] Okky commented: "Looks good, one question…"</div></div></div><div class="row "><div class="icon" style="background:#0060AF">BCA</div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">08:58</div></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div><div class="row snoozed"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Matthew · Engineering</div><div class="time">08:40</div></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div><div class="snz"><span class="ms ">snooze</span> until 14:00</div></div></div><div class="row "><div class="icon" style="background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">HMS Dev Group</div><div class="time">08:20</div></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Bitbucket</div><div class="time">08:05</div></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div><div class="row "><div class="icon" style="background:#EE4D2D"><img src="https://cdn.simpleicons.org/shopee/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Shopee</div><div class="time">07:30</div></div><div class="msg">Pesanan kamu sedang dikirim</div></div></div><div class="dateband"><span>Yesterday</span><span>Friday, 31 October</span></div><div class="row "><div class="icon" style="background:#00B14F"><img src="https://cdn.simpleicons.org/grab/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Grab</div><div class="time">18:31</div></div><div class="msg">Your driver Budi has arrived. White Avanza, B 1234 XYZ.</div></div></div><div class="row snoozed"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Rina (Family)</div><div class="time">07:55</div></div><div class="msg">Jangan lupa beli susu ya</div><div class="snz"><span class="ms ">snooze</span> until Mon 08:00</div></div></div><div class="row "><div class="icon" style="background:#0060AF">BCA</div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">Thu 19:02</div></div><div class="msg">Transaksi berhasil Rp 120.000 ke INDOMARET</div></div></div></div><div class="homebar"></div></div><h3>1 · Hub · All</h3><p>The home screen. Everything not deleted, newest first, date bands, blue bar for unread, amber for snoozed.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">more_vert</span></div></div><div class="tabs"><div class="tab ">All</div><div class="tab on">Unread <span class="count">5</span></div><div class="tab ">Deleted</div></div><div class="chips"><div class="chip on">Every app</div><div class="chip "><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row unread"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Jira (via Gmail)</div><div class="time">09:12</div></div><div class="msg">[IDH-2020] Okky commented: "Looks good, one question…"</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Bitbucket</div><div class="time">08:05</div></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div><div class="dateband"><span>Thursday</span><span>30 October</span></div><div class="row unread"><div class="icon" style="background:#E1306C"><img src="https://cdn.simpleicons.org/instagram/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Instagram</div><div class="time">21:14</div></div><div class="msg">dina_k liked your photo</div></div></div><div class="row unread"><div class="icon" style="background:#FF0000"><img src="https://cdn.simpleicons.org/youtube/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">YouTube</div><div class="time">19:40</div></div><div class="msg">Android Developers: What's new in Material 3 Expressive</div></div></div></div><div class="homebar"></div></div><h3>2 · Hub · Unread</h3><p>Only what you haven't dealt with. Swipe right or open it and it leaves this tab. "Mark all read" in the overflow menu.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="chips"><div class="chip ">Every app</div><div class="chip on"><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row unread"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row "><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Keluarga Besar</div><div class="time">08:12</div></div><div class="msg">Bude: Selamat pagi semuanya 🌸</div></div></div><div class="dateband"><span>Yesterday</span><span>Friday, 31 October</span></div><div class="row snoozed"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Rina (Family)</div><div class="time">07:55</div></div><div class="msg">Jangan lupa beli susu ya</div><div class="snz"><span class="ms ">snooze</span> until Mon 08:00</div></div></div><div class="row "><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Okky</div><div class="time">Thu 17:20</div></div><div class="msg">Mas, PR 1599 udah di-approve Teguh</div></div></div><div class="row "><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">Thu 16:02</div></div><div class="msg">Siap mas</div></div></div></div><div class="homebar"></div></div><h3>3 · Filtered to one app</h3><p>Tap a chip and the stream narrows to that app. Chips scroll sideways; apps are ordered by most recent notification.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="chips"><div class="chip on">Every app</div><div class="chip "><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="swipewrap"><div class="under read"><span class="ms ">mark_email_read</span> Read</div><div class="row unread shift-r"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Jira (via Gmail)</div><div class="time">09:12</div></div><div class="msg">[IDH-2020] Okky commented: "Looks good, one question…"</div></div></div><div class="swipewrap"><div class="under del">Delete <span class="ms ">delete</span></div><div class="row shift-l"><div class="icon" style="background:#0060AF">BCA</div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">08:58</div></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div></div><div class="row snoozed"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Matthew · Engineering</div><div class="time">08:40</div></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div><div class="snz"><span class="ms ">snooze</span> until 14:00</div></div></div><div class="row "><div class="icon" style="background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">HMS Dev Group</div><div class="time">08:20</div></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div></div><div class="toast"><span>Teguh marked read</span><b>Undo</b></div><div class="homebar"></div></div><h3>4 · Swipes</h3><p>Right = Read (green), left = Delete (red). Both show an Undo toast for a few seconds. Both also dismiss the system notification.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="selbar"><span class="ms ">close</span> 3 selected <span class="sp"></span><span class="ms ">done_all</span><span class="ms ">snooze</span><span class="ms ">delete</span><span class="ms ">more_vert</span></div><div style="height:52px"></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="chips"><div class="chip on">Every app</div><div class="chip "><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row sel"><div class="check"><span class="ms ">check</span></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Jira (via Gmail)</div><div class="time">09:12</div></div><div class="msg">[IDH-2020] Okky commented…</div></div></div><div class="row sel"><div class="check"><span class="ms ">check</span></div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">08:58</div></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div><div class="row snoozed"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Matthew · Engineering</div><div class="time">08:40</div></div><div class="msg">@Iwan can we move the push-assignment demo…</div><div class="snz"><span class="ms ">snooze</span> until 14:00</div></div></div><div class="row sel"><div class="check"><span class="ms ">check</span></div><div class="body"><div class="line1"><div class="name">HMS Dev Group</div><div class="time">08:20</div></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Bitbucket</div><div class="time">08:05</div></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div></div><div class="homebar"></div></div><h3>5 · Long-press: select mode</h3><p>Icons become ticks; the top bar swaps to Read, Snooze, Delete and More for the whole selection. Tap × or back to leave.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row unread"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div></div><div class="scrim"></div><div class="sheet"><div class="grab-handle"></div>
+ <div class="row" style="background:transparent;padding:0;border:none"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name" style="font-weight:700">Teguh</div><div class="time">WhatsApp</div></div><div class="meta"><span>5 notifications this week</span></div></div></div>
+ <div class="thread">
+   <div class="bubble">Mas, PR 1599 udah di-approve Teguh<div class="t">Thu 17:20</div></div>
+   <div class="bubble me">Teguh, bisa tolong rebase #1616 ke main?<div class="t">08:52</div></div>
+   <div class="bubble">Siap mas<div class="t">08:53</div></div>
+   <div class="bubble">Mas, PR #1616 sudah saya rebase ke main, conflict di PubSubAuthHandler sudah saya resolve. Bisa dicek lagi kalau sempat? Thanks 🙏<div class="t">09:40</div></div>
+ </div>
+ <div class="replybox"><span>Reply…</span><div class="send"><span class="ms s20">send</span></div></div>
+ <div class="actions"><div class="act primary"><span class="ms ">mark_email_read</span> Mark read</div><div class="act amber"><span class="ms ">snooze</span> Snooze</div><div class="act danger"><span class="ms ">delete</span> Delete</div><div class="act">Open in WhatsApp <span class="ms ">open_in_new</span></div></div>
+ </div><div class="homebar"></div></div><h3>6 · Tap: detail sheet</h3><p>Recent history Hub has stored for this sender, the notification's own reply box when it has one, and the four actions. Swipe down to close.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row unread"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Matthew · Engineering</div><div class="time">08:40</div></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div></div></div></div><div class="scrim"></div><div class="sheet"><div class="grab-handle"></div>
+ <div class="row" style="background:transparent;padding:0;border:none"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name" style="font-weight:700">Matthew · Engineering</div><div class="time">Teams</div></div><div class="meta"><span>Channel: Engineering</span></div></div></div>
+ <div class="thread"><div class="bubble">@Iwan can we move the push-assignment demo to Thursday?<div class="t">08:40</div></div></div>
+ <div class="replybox"><span>Reply…</span><div class="send"><span class="ms s20">send</span></div></div>
+ <div class="actions"><div class="act primary"><span class="ms ">mark_email_read</span> Mark read</div><div class="act amber" style="outline:2px solid #E5A900"><span class="ms ">snooze</span> Snooze</div><div class="act danger"><span class="ms ">delete</span> Delete</div><div class="act">Open in Teams <span class="ms ">open_in_new</span></div></div>
+ <div class="snoozepick"><div class="lbl">SNOOZE UNTIL</div><div class="opts">
+   <div class="opt">In 1 hour <small>10:41</small></div><div class="opt">This afternoon <small>14:00</small></div>
+   <div class="opt">Tomorrow <small>Sun 08:00</small></div><div class="opt">Monday <small>Mon 08:00</small></div>
+   <div class="opt" style="grid-column:span 2;background:#E8ECF4;color:#191C20;flex-direction:row;gap:8px;align-items:center"><span class="ms ">edit_calendar</span> Pick date &amp; time…</div>
+ </div></div></div><div class="homebar"></div></div><h3>7 · Snooze picker</h3><p>Tap Snooze in the sheet (or the select bar) and the choices unfold. The row goes amber and stays where it is.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab ">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab on">Deleted</div></div><div class="banner"><span>Removed for good after <b>30 days</b></span><b><span class="ms s18">delete_sweep</span> Empty now</b></div><div class="list"><div class="dateband"><span>Yesterday</span><span>Friday, 31 October</span></div><div class="row deleted"><div class="icon" style="background:#EE4D2D"><img src="https://cdn.simpleicons.org/shopee/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Shopee</div><div class="time">20:10</div></div><div class="msg">🔥 Flash sale 9.9 mulai sekarang! Diskon s.d. 90%</div><span class="restore">Restore</span></div></div><div class="row deleted"><div class="icon" style="background:#42B549">Tkpd</div><div class="body"><div class="line1"><div class="name">Tokopedia</div><div class="time">17:45</div></div><div class="msg">Paket kamu sudah sampai di hub Jakarta Selatan</div><span class="restore">Restore</span></div></div><div class="dateband"><span>Thursday</span><span>30 October</span></div><div class="row deleted"><div class="icon" style="background:#00B14F"><img src="https://cdn.simpleicons.org/grab/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Grab</div><div class="time">19:30</div></div><div class="msg">Rate your trip with Budi</div><span class="restore">Restore</span></div></div><div class="row deleted"><div class="icon" style="background:#0060AF">BCA</div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">19:02</div></div><div class="msg">Transaksi berhasil Rp 120.000 ke INDOMARET</div><span class="restore">Restore</span></div></div><div class="row deleted"><div class="icon" style="background:#E1306C"><img src="https://cdn.simpleicons.org/instagram/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Instagram</div><div class="time">12:05</div></div><div class="msg">3 people you may know</div><span class="restore">Restore</span></div></div></div><div class="homebar"></div></div><h3>8 · Deleted</h3><p>The bin. Restore puts an item back where it was in All. Swipe left here deletes for good. Auto-empties after 30 days.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="searchbar"><span class="ms ">arrow_back</span> <span>PR #1616</span><div class="cur"></div><span style="flex:1"></span><span class="ms ">close</span></div><div class="chips" style="border:none"><div class="chip on">Every app</div><div class="chip "><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Results</span><span>4 in 2 apps</span></div><div class="row unread"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg"><span class="mark">PR #1616</span> sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Bitbucket</div><div class="time">08:05</div></div><div class="msg"><span class="mark">PR #1616</span>: Okky approved your pull request</div></div></div><div class="row "><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">Thu 16:02</div></div><div class="msg">Siap mas, <span class="mark">PR #1616</span> saya kerjain besok</div></div></div><div class="row "><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Bitbucket</div><div class="time">Wed 11:30</div></div><div class="msg"><span class="mark">PR #1616</span>: Teguh opened a pull request</div></div></div></div><div class="homebar"></div></div><h3>9 · Search</h3><p>Full-text over everything Hub has stored, including Deleted. Matches highlighted. Recent searches show before you type.</p></div>
+<div class="shot "><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title"><span class="back"><span class="ms ">arrow_back</span></span>Settings</div><div class="icons"></div></div><div class="slabel">Apps in Hub</div><div class="sgroup">
+   <div class="sitem"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="t">WhatsApp<small>4 today</small></div><div class="sw on"></div></div>
+   <div class="sitem"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""></div><div class="t">Teams<small>2 today</small></div><div class="sw on"></div></div>
+   <div class="sitem"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="t">Gmail<small>6 today</small></div><div class="sw on"></div></div>
+   <div class="sitem"><div class="icon" style="background:#0060AF">BCA</div><div class="t">BCA mobile<small>1 today</small></div><div class="sw on"></div></div>
+   <div class="sitem"><div class="icon" style="background:#E1306C"><img src="https://cdn.simpleicons.org/instagram/ffffff" alt=""></div><div class="t">Instagram<small>Hidden from Hub</small></div><div class="sw"></div></div>
+   <div class="sitem"><span class="lead"><span class="ms ">add_circle</span></span><div class="t">12 more apps…</div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+ </div>
+ <div class="slabel">Behaviour</div><div class="sgroup">
+   <div class="sitem"><span class="lead"><span class="ms ">auto_delete</span></span><div class="t">Keep deleted items<small>30 days</small></div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+   <div class="sitem"><span class="lead"><span class="ms ">snooze</span></span><div class="t">Snooze wake-up<small>Mark unread, move to top, notify</small></div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+   <div class="sitem"><span class="lead"><span class="ms ">notifications_off</span></span><div class="t">Hide silent notifications<small>Ongoing, media, system</small></div><div class="sw on"></div></div>
+ </div>
+ <div class="slabel">System</div><div class="sgroup">
+   <div class="sitem"><span class="lead"><span class="ms ">notifications</span></span><div class="t">Notification access<small style="color:#0B6B2E">Granted</small></div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+   <div class="sitem"><span class="lead"><span class="ms ">palette</span></span><div class="t">Theme<small>Follows system · Dynamic colour</small></div><span class="chev"><span class="ms ">chevron_right</span></span></div>
+ </div><div class="homebar"></div></div><h3>10 · Settings</h3><p>Which apps feed Hub, how long to keep things, and the notification-access status. Android 16 grouped-container style.</p></div>
+<div class="shot dark"><div class="phone"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="appbar"><div class="title">Hub</div><div class="icons"><span class="ms ">search</span><span class="ms ">settings</span></div></div><div class="tabs"><div class="tab on">All</div><div class="tab ">Unread <span class="count">13</span></div><div class="tab ">Deleted</div></div><div class="chips"><div class="chip on">Every app</div><div class="chip "><img src="https://cdn.simpleicons.org/whatsapp/25D366"> WhatsApp</div><div class="chip "><img src="https://cdn.simpleicons.org/microsoftteams/6264A7"> Teams</div><div class="chip "><img src="https://cdn.simpleicons.org/gmail/EA4335"> Gmail</div></div><div class="list"><div class="dateband"><span>Today</span><span>Saturday, 1 November</span></div><div class="row unread"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Teguh</div><div class="time">09:40</div></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Jira (via Gmail)</div><div class="time">09:12</div></div><div class="msg">[IDH-2020] Okky commented: "Looks good, one question…"</div></div></div><div class="row "><div class="icon" style="background:#0060AF">BCA</div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">08:58</div></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div><div class="row snoozed"><div class="icon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Matthew · Engineering</div><div class="time">08:40</div></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div><div class="snz"><span class="ms ">snooze</span> until 14:00</div></div></div><div class="row "><div class="icon" style="background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">HMS Dev Group</div><div class="time">08:20</div></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div><div class="row unread"><div class="icon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Bitbucket</div><div class="time">08:05</div></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div><div class="row "><div class="icon" style="background:#EE4D2D"><img src="https://cdn.simpleicons.org/shopee/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Shopee</div><div class="time">07:30</div></div><div class="msg">Pesanan kamu sedang dikirim</div></div></div><div class="dateband"><span>Yesterday</span><span>Friday, 31 October</span></div><div class="row "><div class="icon" style="background:#00B14F"><img src="https://cdn.simpleicons.org/grab/ffffff" alt=""></div><div class="body"><div class="line1"><div class="name">Grab</div><div class="time">18:31</div></div><div class="msg">Your driver Budi has arrived. White Avanza, B 1234 XYZ.</div></div></div><div class="row snoozed"><div class="icon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt=""><div class="zz">z</div></div><div class="body"><div class="line1"><div class="name">Rina (Family)</div><div class="time">07:55</div></div><div class="msg">Jangan lupa beli susu ya</div><div class="snz"><span class="ms ">snooze</span> until Mon 08:00</div></div></div><div class="row "><div class="icon" style="background:#0060AF">BCA</div><div class="body"><div class="line1"><div class="name">BCA mobile</div><div class="time">Thu 19:02</div></div><div class="msg">Transaksi berhasil Rp 120.000 ke INDOMARET</div></div></div></div><div class="homebar"></div></div><h3>11 · Dark (system)</h3><p>Same All screen when the system is in dark mode. Dynamic colour tints the blue to the wallpaper.</p></div>
+</div>
+<style>
+  .wallpaper { width: 360px; height: 720px; border-radius: 40px; position:relative; overflow:hidden; box-shadow: 0 12px 40px rgba(0,0,0,.25), inset 0 0 0 8px #111; background: radial-gradient(1200px 600px at 20% 10%, #6fa8ff 0%, #0b57d0 35%, #1b2a4a 75%); font-family: "Google Sans", Roboto, system-ui, sans-serif; }
+  .wallpaper .statusbar { color:#fff; }
+  .wgrid { position:absolute; left: 16px; right: 16px; top: 60px; display:flex; flex-direction:column; gap: 14px; }
+  .widget { background: rgba(247,249,255,.94); border-radius: 28px; padding: 14px 16px; color:#191C20; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .widget.dark { background: rgba(29,33,38,.94); color:#E1E2E8; }
+  .whead { display:flex; align-items:center; gap: 8px; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+  .whead .sp { flex:1; } .whead .wc { background:#0B57D0; color:#fff; font-size: 11px; min-width: 20px; height: 20px; border-radius: 10px; display:flex; align-items:center; justify-content:center; padding: 0 6px; }
+  .dark .whead .wc { background:#A8C7FA; color:#041E49; }
+  .wrow { display:flex; gap: 10px; align-items:center; padding: 6px 0; border-left: 3px solid transparent; padding-left: 8px; margin-left: -8px; border-radius: 4px; }
+  .wrow.unread { border-left-color:#0B57D0; } .dark .wrow.unread { border-left-color:#A8C7FA; }
+  .wicon { width: 28px; height: 28px; border-radius: 8px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .wbody { flex:1; min-width:0; }
+  .wname { font-size: 13px; font-weight: 600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; justify-content:space-between; }
+  .wname span:last-child { font-weight: 500; font-size: 11px; color:#43474E; } .dark .wname span:last-child { color:#8E9199; }
+  .wmsg { font-size: 12px; color:#43474E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .dark .wmsg { color:#C3C6CF; }
+  .wsmall { display:flex; gap: 14px; }
+  .widget.sq { flex:1; display:flex; flex-direction:column; justify-content:space-between; min-height: 150px; }
+  .bignum { font-size: 44px; font-weight: 600; letter-spacing:-1px; line-height: 1; }
+  .bigsub { font-size: 12px; color:#43474E; } .dark .bigsub { color:#C3C6CF; }
+  .wlabel { position:absolute; left: 50%; transform: translateX(-50%); background:#191C20; color:#fff; font-size: 11px; padding: 4px 10px; border-radius: 10px; opacity:.85; }
+  .dock { position:absolute; bottom: 22px; left: 0; right: 0; display:flex; justify-content:space-around; padding: 0 28px; }
+  .dock .app { display:flex; flex-direction:column; align-items:center; gap: 5px; color:#fff; font-size: 11px; }
+  .dock .sq2 { width: 52px; height: 52px; border-radius: 15px; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  .wact { display:flex; gap: 6px; margin-top: 6px; }
+  .wact div { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 10px; background:#D3E3FD; color:#041E49; }
+  .dark .wact div { background:#0842A0; color:#D3E3FD; }
+</style><style>
+  .wbar { display:flex; align-items:center; gap: 8px; padding: 12px 14px; }
+  .wbar .lead { display:flex; align-items:center; gap: 6px; font-weight: 600; font-size: 14px; padding-right: 10px; border-right: 1px solid rgba(127,127,127,.3); margin-right: 2px; }
+  .wapp { position:relative; width: 40px; height: 40px; border-radius: 12px; display:flex; align-items:center; justify-content:center; flex:none; color:#fff; font-weight:700; font-size:10px; }
+  .wapp img { width: 22px; }
+  .wapp .n { position:absolute; top:-6px; right:-6px; min-width: 18px; height: 18px; border-radius: 9px; background:#0B57D0; color:#fff; font-size: 10.5px; font-weight: 700; display:flex; align-items:center; justify-content:center; padding: 0 5px; border: 2px solid rgba(247,249,255,.95); }
+  .dark .wapp .n { background:#A8C7FA; color:#041E49; border-color: rgba(29,33,38,.95); }
+  .wapp.quiet { opacity:.4; }
+</style>
+<h2 style="margin-top:50px">3 · Home-screen widgets</h2>
+<p class="subtitle">Two widgets. Multi-row = the notification list. Single-row = per-app unread counts. Android 16 widget style: big radius, Material You surface, follows system dark mode.</p>
+<div class="grid">
+  <div class="shot"><div class="wallpaper"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="wgrid"><div class="widget "><div class="whead"><svg width="20" height="20" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#0B57D0" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#0B57D0" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#0B57D0"/></svg> Hub <span class="sp"></span><span class="wc">13</span><span class="ms s16">open_in_full</span></div><div class="wrow unread"><div class="wicon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Teguh</span><span>09:40</span></div><div class="wmsg">PR #1616 sudah saya rebase, bisa dicek lagi?</div><div class="wact"><div>Reply</div><div>Read</div></div></div></div><div class="wrow unread"><div class="wicon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Jira (via Gmail)</span><span>09:12</span></div><div class="wmsg">[IDH-2020] Okky commented: "Looks good…"</div></div></div><div class="wrow unread"><div class="wicon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Bitbucket</span><span>08:05</span></div><div class="wmsg">PR #1616: Okky approved your pull request</div></div></div><div class="wrow "><div class="wicon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Matthew · Engineering</span><span>08:40</span></div><div class="wmsg">Snoozed until 14:00</div></div></div></div></div><div class="dock">
+  <div class="app"><div class="sq2" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="28"></div>WhatsApp</div>
+  <div class="app"><div class="sq2" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="28"></div>Teams</div>
+  <div class="app"><div class="sq2" style="background:#0B57D0"><svg width="32" height="32" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#fff" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#fff" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#fff"/></svg></div>Hub</div>
+  <div class="app"><div class="sq2" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="28"></div>Gmail</div>
+</div></div><h3>Multi-row · Notification list</h3><p>Latest unread rows with the blue bar, total in the header, inline Reply / Read on the newest. Resizable: 4×2 shows two rows, 4×3 four, 4×4 six. Tap a row to open its detail sheet.</p></div>
+  <div class="shot"><div class="wallpaper"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="wgrid"><div class="widget " style="padding:0"><div class="wbar"><div class="lead"><svg width="20" height="20" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#0B57D0" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#0B57D0" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#0B57D0"/></svg> 13</div><div class="wapp " style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff"><span class="n">4</span></div><div class="wapp " style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff"><span class="n">2</span></div><div class="wapp " style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff"><span class="n">6</span></div><div class="wapp quiet" style="background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff"></div><div class="wapp " style="background:#0060AF">BCA<span class="n">1</span></div></div></div></div><div class="dock">
+  <div class="app"><div class="sq2" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="28"></div>WhatsApp</div>
+  <div class="app"><div class="sq2" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="28"></div>Teams</div>
+  <div class="app"><div class="sq2" style="background:#0B57D0"><svg width="32" height="32" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#fff" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#fff" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#fff"/></svg></div>Hub</div>
+  <div class="app"><div class="sq2" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="28"></div>Gmail</div>
+</div></div><h3>Single-row · Per-app counts</h3><p>Hub total on the left, then each app with its unread badge; apps with nothing new are dimmed. Tap an app to open Hub filtered to it, tap the total for the Unread tab.</p></div>
+  <div class="shot"><div class="wallpaper"><div class="statusbar"><span>09:41</span><span>▲ ▮ 82%</span></div><div class="wgrid"><div class="widget dark" style="padding:0"><div class="wbar"><div class="lead"><svg width="20" height="20" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#A8C7FA" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#A8C7FA" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#A8C7FA"/></svg> 13</div><div class="wapp " style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff"><span class="n">4</span></div><div class="wapp " style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff"><span class="n">2</span></div><div class="wapp " style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff"><span class="n">6</span></div><div class="wapp quiet" style="background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff"></div><div class="wapp " style="background:#0060AF">BCA<span class="n">1</span></div></div></div><div class="widget dark"><div class="whead"><svg width="20" height="20" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#A8C7FA" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#A8C7FA" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#A8C7FA"/></svg> Hub <span class="sp"></span><span class="wc">13</span><span class="ms s16">open_in_full</span></div><div class="wrow unread"><div class="wicon" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Teguh</span><span>09:40</span></div><div class="wmsg">PR #1616 sudah saya rebase, bisa dicek lagi?</div><div class="wact"><div>Reply</div><div>Read</div></div></div></div><div class="wrow unread"><div class="wicon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Jira (via Gmail)</span><span>09:12</span></div><div class="wmsg">[IDH-2020] Okky commented: "Looks good…"</div></div></div><div class="wrow unread"><div class="wicon" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Bitbucket</span><span>08:05</span></div><div class="wmsg">PR #1616: Okky approved your pull request</div></div></div><div class="wrow "><div class="wicon" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="14"></div><div class="wbody"><div class="wname"><span>Matthew · Engineering</span><span>08:40</span></div><div class="wmsg">Snoozed until 14:00</div></div></div></div></div><div class="dock">
+  <div class="app"><div class="sq2" style="background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="28"></div>WhatsApp</div>
+  <div class="app"><div class="sq2" style="background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="28"></div>Teams</div>
+  <div class="app"><div class="sq2" style="background:#0B57D0"><svg width="32" height="32" viewBox="0 0 48 48" fill="none"><path d="M10 14h28l4 14v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8l4-14z" stroke="#fff" stroke-width="3.6" stroke-linejoin="round"/><path d="M6 28h9l2.5 4h13l2.5-4h9" stroke="#fff" stroke-width="3.6" stroke-linejoin="round"/><circle cx="35" cy="12" r="5" fill="#fff"/></svg></div>Hub</div>
+  <div class="app"><div class="sq2" style="background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="28"></div>Gmail</div>
+</div></div><h3>Dark, both widgets</h3><p>The same two widgets when the system is in dark mode.</p></div>
+</div>
+
+    </div>
+  </div>
+
+</body>
+</html>
