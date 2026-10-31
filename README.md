@@ -3,8 +3,8 @@
 A BlackBerry-Hub-style unified inbox for Android. Hub listens to every
 notification your phone receives, keeps it in a local database, and shows it
 as one chronological stream in Android 16 (Material 3) styling: BB10-style
-flat rows with date bands, swipe to read or delete, long-press to select,
-snooze, full-text search, and two home-screen widgets.
+flat rows with date bands, tap to open the source app, swipe to read or
+delete, long-press to select, full-text search, and two home-screen widgets.
 
 Nothing leaves the phone: there is no network permission.
 
@@ -43,9 +43,9 @@ Connect the phone with USB debugging on, then:
 adb shell am start -n com.iwankurnia.hub/.MainActivity
 ```
 
-On first run Hub asks for notification access (required) and, on
-Android 12+, for exact alarms (used only for snooze wake-ups). It is a
-sideloaded debug build; there is no Play Store listing.
+On first run Hub asks for notification access, the only permission it
+needs to be granted. It is a sideloaded debug build; there is no Play Store
+listing.
 
 ## Tests
 
@@ -60,11 +60,10 @@ database; there are no emulator tests.
 
 ```
 app/src/main/java/com/iwankurnia/hub/
-  capture/   NotificationListenerService, mapper, filter, live-action registry, purge worker
+  capture/   NotificationListenerService, mapper, filter, content-intent registry, purge worker
   data/      Room entities, DAO, repository, DataStore preferences
-  snooze/    AlarmManager scheduling, wake and boot receivers
+  ui/        opening an item in its app (shared by the list and search)
   ui/hub     the Hub screen: tabs, chips, date bands, rows, swipes, select mode
-  ui/sheet   detail sheet with thread, reply and snooze picker
   ui/search  full-text search
   ui/settings, ui/onboarding
   widget/    Glance widgets: notification list and per-app counts
