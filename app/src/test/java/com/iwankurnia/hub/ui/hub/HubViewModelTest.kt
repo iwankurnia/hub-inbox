@@ -92,6 +92,19 @@ class HubViewModelTest {
     }
 
     @Test
+    fun swipeRead_onReadItem_marksUnread() = runTest(dispatcher) {
+        vm.swipeRead(1)
+        assertTrue(repo.get(1).isRead)
+
+        vm.swipeRead(1)
+        assertFalse(repo.get(1).isRead)
+        assertEquals(UndoKind.UNREAD, vm.undo.value?.kind)
+
+        vm.undo()
+        assertTrue(repo.get(1).isRead)
+    }
+
+    @Test
     fun open_marksReadAndSetsOpenItem() = runTest(dispatcher) {
         val live = RecordingLiveActions()
         vm = HubViewModel(repo, live, flowOf(30))

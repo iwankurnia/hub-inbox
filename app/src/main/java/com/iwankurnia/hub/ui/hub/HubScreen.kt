@@ -387,6 +387,7 @@ private fun HubList(
                 val item = items[index] ?: return@item
                 SwipeRow(
                     readEnabled = tab != HubTab.DELETED,
+                    isRead = item.isRead,
                     stayAfterRead = tab == HubTab.ALL,
                     gesturesEnabled = !selecting,
                     onRead = { viewModel.swipeRead(item.id) },
@@ -472,6 +473,11 @@ private fun undoMessage(context: Context, action: UndoAction, nowMs: Long, zone:
             res.getString(R.string.snackbar_marked_read, action.label)
         } else {
             res.getQuantityString(R.plurals.snackbar_n_marked_read, action.count, action.count)
+        }
+        UndoKind.UNREAD -> if (single) {
+            res.getString(R.string.snackbar_marked_unread, action.label)
+        } else {
+            res.getQuantityString(R.plurals.snackbar_n_marked_unread, action.count, action.count)
         }
         UndoKind.DELETE -> if (single) {
             res.getString(R.string.snackbar_deleted, action.label)

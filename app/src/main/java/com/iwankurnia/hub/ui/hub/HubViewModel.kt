@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** What the snackbar reports; the screen turns it into text. */
-enum class UndoKind { READ, DELETE, PURGE, RESTORE, SNOOZE }
+enum class UndoKind { READ, UNREAD, DELETE, PURGE, RESTORE, SNOOZE }
 
 /**
  * A reversible action offered in the snackbar. [label] is the item's title when one item was
@@ -113,7 +113,13 @@ class HubViewModel internal constructor(
         _selection.value = emptySet()
     }
 
-    fun swipeRead(id: Long) = readItems(listOf(id))
+    /** Swipe from the left toggles: an unread row is marked read, a read row goes back to unread. */
+    fun swipeRead(id: Long) {
+        viewModelScope.launch {
+            val item = repository.item(id) ?: return@launch
+            if (item.isRead) unreadItems(listOf(id)) else readItems(listOf(id))
+        }
+    }
 
     fun swipeDelete(id: Long) = deleteItems(listOf(id))
 
@@ -252,6 +258,24 @@ class HubViewModel internal constructor(
                     label = before.singleOrNull()?.title.orEmpty(),
                     revert = { if (wasUnread.isNotEmpty()) repository.markUnread(wasUnread) },
                     kind = UndoKind.READ,
+                    count = ids.size,
+                ),
+            )
+        }
+    }
+
+    private fun unreadItems(ids: List<Long>) {
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            val before = ids.mapNotNull { repository.item(it) }
+            repository.markUnread(ids)
+            // The system notification was cancelled when the item was read; Hub cannot bring it back.
+            val wasRead = before.filter { it.isRead }.map { it.id }
+            offerUndo(
+                UndoAction(
+                    label = before.singleOrNull()?.title.orEmpty(),
+                    revert = { if (wasRead.isNotEmpty()) repository.markRead(wasRead) },
+                    kind = UndoKind.UNREAD,
                     count = ids.size,
                 ),
             )

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.MarkEmailRead
+import androidx.compose.material.icons.rounded.MarkEmailUnread
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -31,14 +32,16 @@ import com.iwankurnia.hub.ui.theme.HubColors
 import kotlinx.coroutines.launch
 
 /**
- * Swipe right to read (green reveal), swipe left to delete (error-container reveal). With
- * [readEnabled] off (the Deleted tab) only the left swipe works. [stayAfterRead] says whether the
- * row remains in the list after it is read, in which case it springs back into place.
+ * Swipe right to toggle read (green reveal, wording follows [isRead]), swipe left to delete
+ * (error-container reveal). With [readEnabled] off (the Deleted tab) only the left swipe works.
+ * [stayAfterRead] says whether the row remains in the list after the toggle, in which case it
+ * springs back into place.
  */
 @Composable
 fun SwipeRow(
     readEnabled: Boolean,
     stayAfterRead: Boolean,
+    isRead: Boolean = false,
     gesturesEnabled: Boolean,
     onRead: () -> Unit,
     onDelete: () -> Unit,
@@ -61,7 +64,7 @@ fun SwipeRow(
             }
         },
         backgroundContent = {
-            SwipeReveal(direction = state.dismissDirection, armed = state.targetValue != SwipeToDismissBoxValue.Settled)
+            SwipeReveal(direction = state.dismissDirection, armed = state.targetValue != SwipeToDismissBoxValue.Settled, toUnread = isRead)
         },
     ) {
         content()
@@ -69,7 +72,7 @@ fun SwipeRow(
 }
 
 @Composable
-private fun SwipeReveal(direction: SwipeToDismissBoxValue, armed: Boolean) {
+private fun SwipeReveal(direction: SwipeToDismissBoxValue, armed: Boolean, toUnread: Boolean) {
     val scale by animateFloatAsState(
         targetValue = if (armed) 1.2f else 0.9f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
@@ -92,8 +95,17 @@ private fun SwipeReveal(direction: SwipeToDismissBoxValue, armed: Boolean) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (reading) {
-            Icon(Icons.Rounded.MarkEmailRead, contentDescription = null, tint = foreground, modifier = Modifier.scale(scale))
-            Text(stringResource(R.string.action_read), color = foreground, fontWeight = FontWeight.SemiBold)
+            Icon(
+                if (toUnread) Icons.Rounded.MarkEmailUnread else Icons.Rounded.MarkEmailRead,
+                contentDescription = null,
+                tint = foreground,
+                modifier = Modifier.scale(scale),
+            )
+            Text(
+                stringResource(if (toUnread) R.string.action_unread else R.string.action_read),
+                color = foreground,
+                fontWeight = FontWeight.SemiBold,
+            )
         } else if (deleting) {
             Text(stringResource(R.string.action_delete), color = foreground, fontWeight = FontWeight.SemiBold)
             Icon(Icons.Rounded.Delete, contentDescription = null, tint = foreground, modifier = Modifier.scale(scale))
