@@ -18,6 +18,7 @@ class GlanceWidgetRefresher @Inject constructor(
     override suspend fun refresh() {
         try {
             HubListWidget().updateAll(context)
+            AppCountWidget().updateAll(context)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
