@@ -31,7 +31,7 @@ import org.robolectric.shadows.ShadowAlarmManager
 class DetailViewModelTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val now = 30L * DAY
+    private var now = 30L * DAY
     private val repository = InMemoryHubRepository { now }
     private val liveActions = RecordingLiveActions()
 
@@ -64,12 +64,36 @@ class DetailViewModelTest {
     @Test
     fun open_marksReadAndCountsThisWeek() = runTest {
         val vm = viewModel()
+        vm.onOpened()
 
         assertTrue(repository.item(1)!!.isRead)
         assertEquals(3, vm.thread.value.size)
         assertEquals(2, vm.weekCount.value) // item 1 and the deleted item 3; item 2 is older than a week
         assertTrue(vm.canReply.value)
         assertEquals(4, vm.snoozeOptions.value.size)
+    }
+
+    @Test
+    fun reopen_marksReadAgain() = runTest {
+        val vm = viewModel()
+
+        vm.onOpened()
+        repository.markUnread(listOf(1L))
+        vm.onOpened()
+
+        assertEquals(listOf(listOf(1L), listOf(1L)), repository.markReadCalls)
+        assertTrue(repository.item(1)!!.isRead)
+    }
+
+    @Test
+    fun snoozeOptions_refreshOnOpen() = runTest {
+        val vm = viewModel()
+        val before = vm.snoozeOptions.value.first().atMs
+
+        now += 2 * HOUR
+        vm.refreshSnoozeOptions()
+
+        assertEquals(before + 2 * HOUR, vm.snoozeOptions.value.first().atMs)
     }
 
     @Test
@@ -135,5 +159,6 @@ class DetailViewModelTest {
 
     private companion object {
         const val DAY = 86_400_000L
+        const val HOUR = 3_600_000L
     }
 }

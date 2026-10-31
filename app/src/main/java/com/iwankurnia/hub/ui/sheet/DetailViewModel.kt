@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 
-/** State and actions behind one item's detail sheet (spec 4.3). Opening it marks the item read. */
+/** State and actions behind one item's detail sheet (spec 4.3). The sheet calls [onOpened] each time it opens. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = DetailViewModel.Factory::class)
 class DetailViewModel internal constructor(
@@ -79,14 +79,24 @@ class DetailViewModel internal constructor(
         .map { it != null && liveActions.hasReply(it.notifKey) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    private val _snoozeOptions = MutableStateFlow(
-        SnoozeTimes.options(clock(), ZoneId.systemDefault(), SnoozeTimes.Labels.from(context)),
-    )
+    private val _snoozeOptions = MutableStateFlow(computeSnoozeOptions())
     val snoozeOptions: StateFlow<List<SnoozeTimes.Option>> = _snoozeOptions.asStateFlow()
 
-    init {
+    /**
+     * Call each time the sheet opens: marks the item read (spec 4.3). Not done in `init` because the
+     * view model outlives the sheet and is reused when the same item is opened again.
+     */
+    fun onOpened() {
         viewModelScope.launch { repository.markRead(listOf(itemId)) }
     }
+
+    /** Recomputes the snooze times from now; call each time the picker opens (spec 4.6). */
+    fun refreshSnoozeOptions() {
+        _snoozeOptions.value = computeSnoozeOptions()
+    }
+
+    private fun computeSnoozeOptions(): List<SnoozeTimes.Option> =
+        SnoozeTimes.options(clock(), ZoneId.systemDefault(), SnoozeTimes.Labels.from(context))
 
     fun now(): Long = clock()
 

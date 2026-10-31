@@ -26,6 +26,9 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
     val prefs = MutableStateFlow<List<AppPref>>(emptyList())
     val counts = MutableStateFlow<List<AppCount>>(emptyList())
 
+    /** Every id list passed to [markRead], in order. */
+    val markReadCalls = mutableListOf<List<Long>>()
+
     /** Every query passed to [search], in order. */
     val searches = mutableListOf<String>()
 
@@ -56,7 +59,10 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
 
     override fun itemFlow(id: Long): Flow<NotificationItem?> = items.map { list -> list.firstOrNull { it.id == id } }
 
-    override suspend fun markRead(ids: List<Long>) = change(ids) { it.copy(isRead = true) }
+    override suspend fun markRead(ids: List<Long>) {
+        markReadCalls += ids
+        change(ids) { it.copy(isRead = true) }
+    }
 
     override suspend fun markUnread(ids: List<Long>) = change(ids) { it.copy(isRead = false) }
 

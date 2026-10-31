@@ -11,6 +11,7 @@ import com.iwankurnia.hub.data.ThreadEntry
 import com.iwankurnia.hub.snooze.SnoozeTimes
 import com.iwankurnia.hub.testing.InMemoryHubRepository.Companion.item
 import com.iwankurnia.hub.ui.theme.HubTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,9 +41,11 @@ class DetailSheetTest {
         nowMs = 4_000L,
     )
 
+    private var snoozeOpens = 0
+
     private fun setContent(canReply: Boolean) = compose.setContent {
         HubTheme(dynamicColor = false) {
-            DetailSheetBody(state = state(canReply), actions = DetailSheetActions.None)
+            DetailSheetBody(state = state(canReply), actions = DetailSheetActions(onOpenSnooze = { snoozeOpens++ }))
         }
     }
 
@@ -65,6 +68,7 @@ class DetailSheetTest {
 
         compose.onNodeWithText("In 1 hour").assertExists()
         compose.onNodeWithText("Pick date & time…").assertExists()
+        assertEquals("opening the picker refreshes the times", 1, snoozeOpens)
     }
 
     @Test

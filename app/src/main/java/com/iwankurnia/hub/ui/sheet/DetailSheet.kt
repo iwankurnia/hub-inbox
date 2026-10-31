@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,7 @@ class DetailSheetActions(
     val onMarkRead: () -> Unit = {},
     val onSnooze: (Long) -> Unit = {},
     val onDelete: () -> Unit = {},
+    val onOpenSnooze: () -> Unit = {},
     val onOpenInApp: () -> Unit = {},
     val onReply: (String) -> Boolean = { false },
     val onLiveAction: (Int) -> Unit = {},
@@ -93,6 +95,7 @@ fun DetailSheet(itemId: Long, onDismiss: () -> Unit) {
     val weekCount by viewModel.weekCount.collectAsStateWithLifecycle()
     val canReply by viewModel.canReply.collectAsStateWithLifecycle()
     val snoozeOptions by viewModel.snoozeOptions.collectAsStateWithLifecycle()
+    LaunchedEffect(itemId) { viewModel.onOpened() }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -126,6 +129,7 @@ fun DetailSheet(itemId: Long, onDismiss: () -> Unit) {
                 onMarkRead = { viewModel.markRead(); close() },
                 onSnooze = { viewModel.snooze(it); close() },
                 onDelete = { viewModel.delete(); close() },
+                onOpenSnooze = viewModel::refreshSnoozeOptions,
                 onOpenInApp = viewModel::openInApp,
                 onReply = viewModel::reply,
                 onLiveAction = viewModel::runLiveAction,
@@ -155,7 +159,10 @@ fun DetailSheetBody(state: DetailState, actions: DetailSheetActions, modifier: M
         ActionChips(
             state = state,
             snoozeOpen = snoozeOpen,
-            onToggleSnooze = { snoozeOpen = !snoozeOpen },
+            onToggleSnooze = {
+                if (!snoozeOpen) actions.onOpenSnooze()
+                snoozeOpen = !snoozeOpen
+            },
             actions = actions,
         )
         if (snoozeOpen) {
