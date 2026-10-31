@@ -88,6 +88,20 @@ class SnoozeSchedulerTest {
     }
 
     @Test
+    fun reschedule_fallsBackOnSecurityException() = runTest {
+        // Exact-alarm permission revoked between the check and the call.
+        val revoking = SnoozeScheduler(context, repository) { _, _, _ -> throw SecurityException("revoked") }
+        repository.add(InMemoryHubRepository.item(1, snoozedUntil = 5_000L))
+
+        revoking.reschedule()
+
+        val alarm = shadowOf(alarmManager).scheduledAlarms.single()
+        assertEquals(5_000L, alarm.triggerAtMs)
+        assertTrue(alarm.isAllowWhileIdle)
+        assertEquals(ShadowAlarmManager.WINDOW_HEURISTIC, alarm.windowLengthMs)
+    }
+
+    @Test
     fun reschedule_cancelsWhenNone() = runTest {
         repository.add(InMemoryHubRepository.item(1, snoozedUntil = 5_000L))
         scheduler.reschedule()
