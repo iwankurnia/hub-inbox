@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every user-visible string in Hub, British English. Later tracks reference these; do not
+     hard-code UI text in Kotlin. -->
+<resources>
+    <string name="app_name">Hub</string>
+
+    <!-- Hub screen (spec 4.2) -->
+    <string name="hub_title">Hub</string>
+    <string name="action_search">Search</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_more">More options</string>
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_clear">Clear</string>
+    <string name="tab_all">All</string>
+    <string name="tab_unread">Unread</string>
+    <string name="tab_deleted">Deleted</string>
+    <string name="chip_every_app">Every app</string>
+    <string name="date_today">Today</string>
+    <string name="date_yesterday">Yesterday</string>
+    <string name="row_snoozed_until">until %1$s</string>
+    <string name="cd_unread">Unread</string>
+    <string name="cd_snoozed">Snoozed</string>
+    <string name="cd_selected">Selected</string>
+    <string name="cd_app_icon">%1$s icon</string>
+    <string name="action_mark_all_read">Mark all read</string>
+    <string name="empty_all">Nothing here yet. Notifications appear here as your apps post them.</string>
+    <string name="empty_unread">All caught up</string>
+    <string name="empty_deleted">Nothing in Deleted</string>
+
+    <!-- Detail sheet (spec 4.3) -->
+    <plurals name="sheet_count_this_week">
+        <item quantity="one">%1$d notification this week</item>
+        <item quantity="other">%1$d notifications this week</item>
+    </plurals>
+    <string name="sheet_channel">Channel: %1$s</string>
+    <string name="reply_hint">Reply…</string>
+    <string name="action_send">Send</string>
+    <string name="action_mark_read">Mark read</string>
+    <string name="action_snooze">Snooze</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_open_in">Open in %1$s</string>
+    <string name="reply_failed">Couldn\'t send the reply. The notification is no longer active.</string>
+
+    <!-- Gestures and select mode (spec 4.4) -->
+    <string name="action_read">Read</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_open_in_app">Open in app</string>
+    <string name="selection_count">%1$d selected</string>
+    <string name="snackbar_marked_read">%1$s marked read</string>
+    <string name="snackbar_deleted">%1$s deleted</string>
+    <plurals name="snackbar_n_marked_read">
+        <item quantity="one">%1$d item marked read</item>
+        <item quantity="other">%1$d items marked read</item>
+    </plurals>
+    <plurals name="snackbar_n_deleted">
+        <item quantity="one">%1$d item deleted</item>
+        <item quantity="other">%1$d items deleted</item>
+    </plurals>
+    <plurals name="snackbar_n_snoozed">
+        <item quantity="one">%1$d item snoozed until %2$s</item>
+        <item quantity="other">%1$d items snoozed until %2$s</item>
+    </plurals>
+    <string name="snackbar_snoozed">Snoozed until %1$s</string>
+    <string name="snackbar_all_marked_read">All marked read</string>
+
+    <!-- Deleted (spec 4.5) -->
+    <string name="deleted_banner">Removed for good after %1$d days</string>
+    <string name="deleted_banner_forever">Deleted items are kept until you empty them</string>
+    <string name="action_empty_now">Empty now</string>
+    <string name="action_restore">Restore</string>
+    <string name="snackbar_restored">%1$s restored</string>
+    <string name="snackbar_deleted_for_good">%1$s removed for good</string>
+    <string name="snackbar_emptied">Deleted emptied</string>
+
+    <!-- Snooze (spec 4.6) -->
+    <string name="snooze_until_header">Snooze until</string>
+    <string name="snooze_in_one_hour">In 1 hour</string>
+    <string name="snooze_this_afternoon">This afternoon</string>
+    <string name="snooze_tomorrow">Tomorrow</string>
+    <string name="snooze_monday">Monday</string>
+    <string name="snooze_pick_date_time">Pick date &amp; time…</string>
+    <string name="snooze_notification_title">Snoozed: %1$s</string>
+    <string name="snooze_channel_name">Snooze wake-ups</string>
+    <string name="snooze_channel_description">Tells you when a snoozed notification is back</string>
+
+    <!-- Search (spec 4.7) -->
+    <string name="search_hint">Search Hub</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_results">Results</string>
+    <string name="search_results_summary">%1$d in %2$d apps</string>
+    <string name="search_no_results">No matches</string>
+    <string name="search_clear_recent">Clear recent searches</string>
+
+    <!-- Settings (spec 4.8) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_apps">Apps in Hub</string>
+    <string name="settings_app_today_count">%1$d today</string>
+    <string name="settings_app_hidden">Hidden from Hub</string>
+    <string name="settings_more_apps">%1$d more apps…</string>
+    <string name="settings_section_behaviour">Behaviour</string>
+    <string name="settings_keep_deleted">Keep deleted items</string>
+    <string name="settings_keep_deleted_7_days">7 days</string>
+    <string name="settings_keep_deleted_30_days">30 days</string>
+    <string name="settings_keep_deleted_90_days">90 days</string>
+    <string name="settings_keep_deleted_forever">Forever</string>
+    <string name="settings_snooze_wake_up">Snooze wake-up</string>
+    <string name="settings_snooze_wake_up_summary">Mark unread, move to top, notify</string>
+    <string name="settings_hide_silent">Hide silent notifications</string>
+    <string name="settings_hide_silent_summary">Ones Android shows silently</string>
+    <string name="settings_section_system">System</string>
+    <string name="settings_notification_access">Notification access</string>
+    <string name="settings_access_granted">Granted</string>
+    <string name="settings_access_not_granted">Not granted</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_summary">Follows system · Dynamic colour</string>
+    <string name="settings_theme_summary_no_dynamic">Follows system</string>
+    <string name="settings_dynamic_colour">Dynamic colour</string>
+
+    <!-- Onboarding (spec 4.1) -->
+    <string name="onboarding_title">All your notifications, one list</string>
+    <string name="onboarding_body">Hub reads the notifications your apps post and keeps them in one place. Nothing leaves your phone.</string>
+    <string name="onboarding_access_title">Notification access</string>
+    <string name="onboarding_access_summary">Required, so Hub can see and dismiss them</string>
+    <string name="onboarding_alarms_title">Alarms &amp; reminders</string>
+    <string name="onboarding_alarms_summary">Only for snooze wake-ups</string>
+    <string name="onboarding_allow_access">Allow notification access</string>
+    <string name="onboarding_continue">Continue</string>
+
+    <!-- Widgets (spec 4.9) -->
+    <string name="widget_header">Hub</string>
+    <string name="widget_hub_list_label">Hub notifications</string>
+    <string name="widget_hub_list_description">Your newest unread notifications</string>
+    <string name="widget_app_count_label">Hub app counts</string>
+    <string name="widget_app_count_description">Unread count for each app</string>
+    <string name="widget_action_reply">Reply</string>
+    <string name="widget_action_read">Read</string>
+    <string name="widget_open_hub">Open Hub</string>
+    <string name="widget_empty">No unread notifications</string>
+    <string name="widget_unread_total">%1$d unread</string>
+
+    <!-- Notification listener -->
+    <string name="listener_service_label">Hub notification capture</string>
+</resources>
