@@ -73,6 +73,9 @@
     <string name="snackbar_restored">%1$s restored</string>
     <string name="snackbar_deleted_for_good">%1$s removed for good</string>
     <string name="snackbar_emptied">Deleted emptied</string>
+    <string name="empty_now_confirm_title">Empty Deleted?</string>
+    <string name="empty_now_confirm_body">Everything in Deleted will be removed for good. This can\'t be undone.</string>
+    <string name="hub_action_cancel">Cancel</string>
 
     <!-- Snooze (spec 4.6) -->
     <string name="snooze_until_header">Snooze until</string>
