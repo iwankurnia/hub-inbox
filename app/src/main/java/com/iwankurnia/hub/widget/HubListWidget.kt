@@ -6,7 +6,6 @@ import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -51,9 +50,12 @@ import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.icon.AppIconCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import java.text.DateFormat
 
 /** Vertical padding of the list widget, top plus bottom. */
@@ -93,22 +95,26 @@ class HubListWidget : GlanceAppWidget() {
         setOf(listHeightFor(1), listHeightFor(2), listHeightFor(4), listHeightFor(6)).map { DpSize(250.dp, it) }.toSet(),
     )
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
+    override suspend fun provideGlance(context: Context, id: GlanceId) = coroutineScope {
         val entryPoint = widgetEntryPoint(context)
+        // One collection for the whole session: stateIn waits for the first state, then keeps following.
+        // Room re-runs the count query on every change to the items table, so this also keeps a running
+        // session current between pushes from GlanceWidgetRefresher.
         val states = listStates(entryPoint.repository(), entryPoint.appIconCache(), context.dpToPx(ICON_DP))
-        val initial = states.first()
+            .stateIn(this)
         provideContent {
-            // Room re-runs the count query on every change to the items table, so this also
-            // keeps a running session current between pushes from GlanceWidgetRefresher.
-            val state by remember { states }.collectAsState(initial)
+            val state by states.collectAsState()
             HubWidgetTheme { HubListContent(state) }
         }
     }
 
+    /** Icons are drawn into bitmaps off the main thread, once per update. */
     private fun listStates(repository: HubRepository, icons: AppIconCache, iconPx: Int): Flow<ListState> =
         repository.unreadCount().map { unread ->
-            val rows = repository.latestUnread(MAX_ROWS).map { item -> ListRow(item, icons.iconBitmap(item.packageName, iconPx)) }
-            ListState(unread, rows)
+            withContext(Dispatchers.IO) {
+                val rows = repository.latestUnread(MAX_ROWS).map { item -> ListRow(item, icons.iconBitmap(item.packageName, iconPx)) }
+                ListState(unread, rows)
+            }
         }
 }
 

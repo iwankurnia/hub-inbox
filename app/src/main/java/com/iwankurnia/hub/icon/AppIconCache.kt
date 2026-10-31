@@ -16,13 +16,19 @@ class AppIconCache @Inject constructor(@ApplicationContext ctx: Context) {
 
     private val packageManager = ctx.packageManager
     private val icons = LruCache<String, Drawable>(MAX_ICONS)
+    private val labels = LruCache<String, String>(MAX_LABELS)
 
-    /** The app's label, or [packageName] when the app is not installed. */
-    fun label(packageName: String): String = try {
-        val info = packageManager.getApplicationInfo(packageName, 0)
-        packageManager.getApplicationLabel(info).toString()
-    } catch (_: PackageManager.NameNotFoundException) {
-        packageName
+    /** The app's label, or [packageName] when the app is not installed; cached, as rows ask for it while composing. */
+    fun label(packageName: String): String {
+        labels.get(packageName)?.let { return it }
+        val label = try {
+            val info = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(info).toString()
+        } catch (_: PackageManager.NameNotFoundException) {
+            packageName
+        }
+        labels.put(packageName, label)
+        return label
     }
 
     /** The app's icon, or null when the app is not installed. */
@@ -40,5 +46,6 @@ class AppIconCache @Inject constructor(@ApplicationContext ctx: Context) {
 
     private companion object {
         const val MAX_ICONS = 64
+        const val MAX_LABELS = 64
     }
 }

@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -43,9 +42,12 @@ import com.iwankurnia.hub.HubIntents
 import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.icon.AppIconCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /** App tiles that fit beside the total in [widthDp]: 100dp for padding, total and divider, 48dp per app, 1 to 8. */
 fun appsThatFit(widthDp: Int): Int = ((widthDp - FIXED_DP) / APP_SLOT_DP).coerceIn(1, MAX_APPS)
@@ -58,29 +60,32 @@ class AppCountWidget : GlanceAppWidget() {
 
     override val sizeMode = SizeMode.Exact
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
+    override suspend fun provideGlance(context: Context, id: GlanceId) = coroutineScope {
         val entryPoint = widgetEntryPoint(context)
-        val states = barStates(context, entryPoint.repository(), entryPoint.appIconCache())
-        val initial = states.first()
+        // One collection for the whole session: stateIn waits for the first state, then keeps following.
+        // appCounts is a Room flow, so a running session also follows changes between refreshes.
+        val states = barStates(context, entryPoint.repository(), entryPoint.appIconCache()).stateIn(this)
         provideContent {
-            // appCounts is a Room flow, so a running session also follows changes between refreshes.
-            val state by remember { states }.collectAsState(initial)
+            val state by states.collectAsState()
             HubWidgetTheme { AppCountContent(state) }
         }
     }
 
+    /** Labels and icon bitmaps are looked up off the main thread, once per update. */
     private fun barStates(context: Context, repository: HubRepository, icons: AppIconCache): Flow<BarState> {
         val iconPx = context.dpToPx(ICON_DP)
         return repository.appCounts().map { counts ->
-            val apps = counts.sortedByDescending { it.lastSeenAt }.take(MAX_APPS).map { count ->
-                AppTile(
-                    packageName = count.packageName,
-                    label = icons.label(count.packageName),
-                    unread = count.unread,
-                    icon = icons.iconBitmap(count.packageName, iconPx),
-                )
+            withContext(Dispatchers.IO) {
+                val apps = counts.sortedByDescending { it.lastSeenAt }.take(MAX_APPS).map { count ->
+                    AppTile(
+                        packageName = count.packageName,
+                        label = icons.label(count.packageName),
+                        unread = count.unread,
+                        icon = icons.iconBitmap(count.packageName, iconPx),
+                    )
+                }
+                BarState(total = counts.sumOf { it.unread }, apps = apps)
             }
-            BarState(total = counts.sumOf { it.unread }, apps = apps)
         }
     }
 }
