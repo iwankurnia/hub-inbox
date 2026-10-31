@@ -55,18 +55,6 @@ object DateBands {
         return format(epochMs, zone, pattern, locale)
     }
 
-    /** The "until …" text on a snoozed row: `HH:mm` today, `EEE HH:mm` within six days, else `d MMM HH:mm`. */
-    fun untilTime(epochMs: Long, nowMs: Long, zone: ZoneId, locale: Locale = Locale.UK): String {
-        val date = Instant.ofEpochMilli(epochMs).atZone(zone).toLocalDate()
-        val daysAhead = ChronoUnit.DAYS.between(today(nowMs, zone), date)
-        val pattern = when {
-            daysAhead <= 0L -> "HH:mm"
-            daysAhead <= WEEK_DAYS -> "EEE HH:mm"
-            else -> "d MMM HH:mm"
-        }
-        return format(epochMs, zone, pattern, locale)
-    }
-
     private fun format(epochMs: Long, zone: ZoneId, pattern: String, locale: Locale): String =
         Instant.ofEpochMilli(epochMs).atZone(zone).format(DateTimeFormatter.ofPattern(pattern, locale))
 

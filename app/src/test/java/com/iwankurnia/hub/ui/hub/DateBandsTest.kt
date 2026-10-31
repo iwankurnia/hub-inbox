@@ -43,11 +43,4 @@ class DateBandsTest {
         assertEquals("Mon 08:00", DateBands.rowTime(at(2026, 10, 26, 8, 0), now, zone))
         assertEquals("25 Oct", DateBands.rowTime(at(2026, 10, 25, 23, 59), now, zone))
     }
-
-    @Test
-    fun untilTime_todayWeekLater() {
-        assertEquals("14:00", DateBands.untilTime(at(2026, 11, 1, 14, 0), now, zone))
-        assertEquals("Mon 08:00", DateBands.untilTime(at(2026, 11, 2, 8, 0), now, zone))
-        assertEquals("12 Nov 08:00", DateBands.untilTime(at(2026, 11, 12, 8, 0), now, zone))
-    }
 }

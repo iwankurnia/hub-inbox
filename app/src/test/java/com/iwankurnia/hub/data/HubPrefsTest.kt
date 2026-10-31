@@ -41,7 +41,6 @@ class HubPrefsTest {
     fun defaults() = runTest {
         assertTrue(prefs.hideSilent.first())
         assertEquals(30, prefs.keepDeletedDays.first())
-        assertTrue(prefs.snoozeNotify.first())
         assertTrue(prefs.dynamicColor.first())
         assertTrue(prefs.recentSearches.first().isEmpty())
         assertFalse(prefs.onboardingDone.first())
@@ -51,13 +50,11 @@ class HubPrefsTest {
     fun setters_persistValues() = runTest {
         prefs.setHideSilent(false)
         prefs.setKeepDeletedDays(7)
-        prefs.setSnoozeNotify(false)
         prefs.setDynamicColor(false)
         prefs.setOnboardingDone(true)
 
         assertFalse(prefs.hideSilent.first())
         assertEquals(7, prefs.keepDeletedDays.first())
-        assertFalse(prefs.snoozeNotify.first())
         assertFalse(prefs.dynamicColor.first())
         assertTrue(prefs.onboardingDone.first())
     }

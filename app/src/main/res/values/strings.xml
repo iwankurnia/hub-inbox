@@ -21,9 +21,7 @@
     <string name="filter_active">Only %1$s</string>
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
-    <string name="row_snoozed_until">until %1$s</string>
     <string name="cd_unread">Unread</string>
-    <string name="cd_snoozed">Snoozed</string>
     <string name="cd_selected">Selected</string>
     <string name="cd_app_icon">%1$s icon</string>
     <string name="action_mark_all_read">Mark all read</string>
@@ -69,15 +67,6 @@
     <string name="empty_now_confirm_body">Everything in Deleted will be removed for good. This can\'t be undone.</string>
     <string name="hub_action_cancel">Cancel</string>
 
-    <!-- Snooze (spec 4.6) -->
-    <string name="snooze_in_one_hour">In 1 hour</string>
-    <string name="snooze_this_afternoon">This afternoon</string>
-    <string name="snooze_tomorrow">Tomorrow</string>
-    <string name="snooze_monday">Monday</string>
-    <string name="snooze_notification_title">Snoozed: %1$s</string>
-    <string name="snooze_channel_name">Snooze wake-ups</string>
-    <string name="snooze_channel_description">Tells you when a snoozed notification is back</string>
-
     <!-- Search (spec 4.7) -->
     <string name="search_hint">Search Hub</string>
     <string name="search_recent">Recent searches</string>
@@ -99,9 +88,6 @@
     <string name="settings_keep_deleted_30_days">30 days</string>
     <string name="settings_keep_deleted_90_days">90 days</string>
     <string name="settings_keep_deleted_forever">Forever</string>
-    <string name="settings_snooze_wake_up">Snooze wake-up</string>
-    <string name="settings_snooze_wake_up_summary">Mark unread, move to top, notify</string>
-    <string name="settings_snooze_notify_summary">Notify when an item wakes</string>
     <string name="settings_hide_silent">Hide silent notifications</string>
     <string name="settings_hide_silent_summary">Ones Android shows silently</string>
     <string name="settings_section_system">System</string>
@@ -118,8 +104,6 @@
     <string name="onboarding_body">Hub reads the notifications your apps post and keeps them in one place. Nothing leaves your phone.</string>
     <string name="onboarding_access_title">Notification access</string>
     <string name="onboarding_access_summary">Required, so Hub can see and dismiss them</string>
-    <string name="onboarding_alarms_title">Alarms &amp; reminders</string>
-    <string name="onboarding_alarms_summary">Only for snooze wake-ups</string>
     <string name="onboarding_allow_access">Allow notification access</string>
     <string name="onboarding_continue">Continue</string>
 

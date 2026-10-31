@@ -25,7 +25,6 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -84,7 +83,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val hideSilent by viewModel.hideSilent.collectAsStateWithLifecycle()
     val keepDays by viewModel.keepDeletedDays.collectAsStateWithLifecycle()
-    val snoozeNotify by viewModel.snoozeNotify.collectAsStateWithLifecycle()
     val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
     val iconCache = remember { AppIconCache(context.applicationContext) }
     var showAllApps by rememberSaveable { mutableStateOf(false) }
@@ -138,14 +136,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     subtitle = keepLabel(keepDays),
                     onClick = { keepDialog = true },
                     trailing = { Chevron() },
-                )
-                Hairline()
-                SettingsRow(
-                    icon = Icons.Rounded.Snooze,
-                    title = stringResource(R.string.settings_snooze_wake_up),
-                    subtitle = stringResource(R.string.settings_snooze_notify_summary),
-                    onClick = { viewModel.setSnoozeNotify(!snoozeNotify) },
-                    trailing = { Switch(checked = snoozeNotify, onCheckedChange = viewModel::setSnoozeNotify) },
                 )
                 Hairline()
                 SettingsRow(

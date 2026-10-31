@@ -1,6 +1,5 @@
 package com.iwankurnia.hub.ui.hub
 
-import com.iwankurnia.hub.capture.NoLiveActions
 import com.iwankurnia.hub.data.HubFilter
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.ItemState
@@ -203,59 +202,4 @@ class HubViewModelTest {
         vm.markAllRead()
         assertEquals(listOf("k1", "k3"), live.cancelled)
     }
-
-    @Test
-    fun swipeDelete_reschedulesAlarm() = runTest(dispatcher) {
-        val alarms = withRecordedReschedules()
-        vm.swipeDelete(2)
-        assertEquals(1, alarms.count)
-    }
-
-    @Test
-    fun undoDelete_reschedulesAlarm() = runTest(dispatcher) {
-        val alarms = withRecordedReschedules()
-        vm.swipeDelete(2)
-        vm.undo()
-        // Once for the delete, once more after Undo puts the snooze back.
-        assertEquals(2, alarms.count)
-        assertEquals(9_000L, repo.get(2).snoozedUntil)
-    }
-
-    @Test
-    fun deleteSelected_restore_purgeAndEmpty_rescheduleAlarm() = runTest(dispatcher) {
-        val alarms = withRecordedReschedules()
-        vm.toggleSelect(1)
-        vm.deleteSelected()
-        assertEquals(1, alarms.count)
-
-        vm.restore(1)
-        assertEquals(2, alarms.count)
-
-        vm.selectTab(HubTab.DELETED)
-        vm.purge(3)
-        vm.dismissUndo(vm.undo.value!!)
-        assertEquals(3, alarms.count)
-
-        vm.emptyDeleted()
-        assertEquals(4, alarms.count)
-    }
-
-    @Test
-    fun swipeRead_doesNotRescheduleAlarm() = runTest(dispatcher) {
-        val alarms = withRecordedReschedules()
-        vm.swipeRead(1)
-        assertEquals(0, alarms.count)
-    }
-
-    private class RecordedReschedules {
-        var count = 0
-    }
-
-    /** Rebuilds [vm] with a scheduler seam that counts reschedule calls. */
-    private fun withRecordedReschedules(): RecordedReschedules {
-        val recorded = RecordedReschedules()
-        vm = HubViewModel(repo, NoLiveActions, flowOf(30), rescheduleAlarm = { recorded.count++ })
-        return recorded
-    }
 }
-

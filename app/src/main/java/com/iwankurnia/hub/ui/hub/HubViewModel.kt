@@ -12,7 +12,6 @@ import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.NotificationItem
-import com.iwankurnia.hub.snooze.SnoozeScheduler
 import com.iwankurnia.hub.ui.openItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -49,7 +48,6 @@ data class UndoAction(
 
 /**
  * State and actions for the Hub list: tab, app filter, paging, selection, undo and opening an item.
- * Every mutation that can change the next snooze time ends with [rescheduleAlarm] (spec 4.6).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -57,14 +55,13 @@ class HubViewModel internal constructor(
     private val repository: HubRepository,
     private val liveActions: LiveActions,
     keepDeletedDaysSource: Flow<Int>,
-    private val rescheduleAlarm: suspend () -> Unit = {},
 ) : ViewModel() {
 
     @Inject
-    constructor(repository: HubRepository, liveActions: LiveActions, prefs: HubPrefs, scheduler: SnoozeScheduler) :
-        this(repository, liveActions, prefs.keepDeletedDays, scheduler::reschedule)
+    constructor(repository: HubRepository, liveActions: LiveActions, prefs: HubPrefs) :
+        this(repository, liveActions, prefs.keepDeletedDays)
 
-    /** For tests and previews: no live notifications, the default 30-day bin, no alarm. */
+    /** For tests and previews: no live notifications and the default 30-day bin. */
     constructor(repository: HubRepository) : this(repository, NoLiveActions, flowOf(DEFAULT_KEEP_DELETED_DAYS))
 
     private val _tab = MutableStateFlow(HubTab.ALL)
@@ -130,7 +127,6 @@ class HubViewModel internal constructor(
         viewModelScope.launch {
             val item = repository.item(id) ?: return@launch
             repository.restore(listOf(id))
-            rescheduleAlarm()
             offerUndo(UndoAction(item.title, { repository.delete(listOf(id)) }, UndoKind.RESTORE))
         }
     }
@@ -139,10 +135,7 @@ class HubViewModel internal constructor(
     fun purge(id: Long) = purgeItems(listOf(id))
 
     fun emptyDeleted() {
-        viewModelScope.launch {
-            repository.emptyDeleted()
-            rescheduleAlarm()
-        }
+        viewModelScope.launch { repository.emptyDeleted() }
     }
 
     /** Marks everything read (for the filtered app, when one is chosen) and clears those system notifications. */
@@ -158,10 +151,7 @@ class HubViewModel internal constructor(
     fun undo() {
         val action = _undo.value ?: return
         _undo.value = null
-        viewModelScope.launch {
-            action.revert()
-            rescheduleAlarm()
-        }
+        viewModelScope.launch { action.revert() }
     }
 
     /** The snackbar for [action] went away without Undo: commit whatever was waiting on it. */
@@ -210,10 +200,7 @@ class HubViewModel internal constructor(
         // viewModelScope is already cancelled; a purge still waiting on Undo must not be lost.
         val ids = pendingPurge
         if (ids.isNotEmpty()) {
-            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                repository.purge(ids.toList())
-                rescheduleAlarm()
-            }
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch { repository.purge(ids.toList()) }
         }
         super.onCleared()
     }
@@ -265,7 +252,6 @@ class HubViewModel internal constructor(
         viewModelScope.launch {
             val before = ids.mapNotNull { repository.item(it) }
             repository.delete(ids)
-            rescheduleAlarm()
             before.forEach { liveActions.cancel(it.notifKey) }
             offerUndo(
                 UndoAction(
@@ -312,10 +298,7 @@ class HubViewModel internal constructor(
         if (ids.isEmpty()) return
         pendingPurge = emptySet()
         // Purged ids never come back, so they stay hidden until the paged list catches up.
-        viewModelScope.launch {
-            repository.purge(ids.toList())
-            rescheduleAlarm()
-        }
+        viewModelScope.launch { repository.purge(ids.toList()) }
     }
 
     private companion object {

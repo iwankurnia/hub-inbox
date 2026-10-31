@@ -25,7 +25,6 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
 
     val hideSilent: Flow<Boolean> = store.data.map { it[HIDE_SILENT] ?: true }
     val keepDeletedDays: Flow<Int> = store.data.map { it[KEEP_DELETED_DAYS] ?: 30 }
-    val snoozeNotify: Flow<Boolean> = store.data.map { it[SNOOZE_NOTIFY] ?: true }
     val dynamicColor: Flow<Boolean> = store.data.map { it[DYNAMIC_COLOR] ?: true }
 
     /** At most [MAX_RECENT_SEARCHES], newest first. */
@@ -34,7 +33,6 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
 
     suspend fun setHideSilent(value: Boolean) = set(HIDE_SILENT, value)
     suspend fun setKeepDeletedDays(value: Int) = set(KEEP_DELETED_DAYS, value)
-    suspend fun setSnoozeNotify(value: Boolean) = set(SNOOZE_NOTIFY, value)
     suspend fun setDynamicColor(value: Boolean) = set(DYNAMIC_COLOR, value)
     suspend fun setOnboardingDone(value: Boolean) = set(ONBOARDING_DONE, value)
 
@@ -58,7 +56,6 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
         const val SEPARATOR = "\u001F"
         val HIDE_SILENT = booleanPreferencesKey("hide_silent")
         val KEEP_DELETED_DAYS = intPreferencesKey("keep_deleted_days")
-        val SNOOZE_NOTIFY = booleanPreferencesKey("snooze_notify")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val RECENT_SEARCHES = stringPreferencesKey("recent_searches")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")

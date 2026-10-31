@@ -3,7 +3,6 @@ package com.iwankurnia.hub.ui.hub
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,16 +13,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Restore
-import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -59,7 +55,6 @@ import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.icon.AppIconCache
-import com.iwankurnia.hub.ui.theme.HubColors
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -68,8 +63,8 @@ private val IconSize = 34.dp
 private val IconShape = RoundedCornerShape(9.dp)
 
 /**
- * One BB10-style row: 4dp state bar, 34dp app icon (or a tick when selected), title and time,
- * one-line preview, then the amber "until …" chip when snoozed or the Restore chip in Deleted.
+ * One BB10-style row: 4dp unread bar, 34dp app icon (or a tick when selected), title and time,
+ * one-line preview, then the Restore chip in Deleted.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -85,20 +80,13 @@ fun HubRow(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val snoozed = item.snoozedUntil != null && item.state == ItemState.ACTIVE
-    val unread = !item.isRead && !snoozed && item.state == ItemState.ACTIVE
+    val unread = !item.isRead && item.state == ItemState.ACTIVE
     val deleted = item.state == ItemState.DELETED
-    val barColour = when {
-        snoozed -> HubColors.snoozedBar
-        unread -> colors.primary
-        else -> Color.Transparent
-    }
+    val barColour = if (unread) colors.primary else Color.Transparent
     val unreadDescription = stringResource(R.string.cd_unread)
-    val snoozedDescription = stringResource(R.string.cd_snoozed)
     val selectedDescription = stringResource(R.string.cd_selected)
     val state = listOfNotNull(
         unreadDescription.takeIf { unread },
-        snoozedDescription.takeIf { snoozed },
         selectedDescription.takeIf { selected },
     ).joinToString()
 
@@ -125,7 +113,7 @@ fun HubRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (selected) SelectedTick() else AppIcon(item.packageName, iconCache, IconSize, badge = snoozed, greyscale = item.isRead)
+                if (selected) SelectedTick() else AppIcon(item.packageName, iconCache, IconSize, greyscale = item.isRead)
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -152,9 +140,6 @@ fun HubRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (snoozed) {
-                        SnoozedChip(DateBands.untilTime(item.snoozedUntil, nowMs, zone))
-                    }
                     if (deleted) {
                         RestoreChip(onRestore)
                     }
@@ -182,26 +167,6 @@ private fun SelectedTick() {
 }
 
 @Composable
-private fun SnoozedChip(until: String) {
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-        AssistChip(
-            onClick = {},
-            enabled = false,
-            label = { Text(stringResource(R.string.row_snoozed_until, until), fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-            leadingIcon = { Icon(Icons.Rounded.Snooze, contentDescription = null, modifier = Modifier.size(12.dp)) },
-            modifier = Modifier.padding(top = 2.dp).height(22.dp),
-            shape = RoundedCornerShape(11.dp),
-            border = null,
-            colors = AssistChipDefaults.assistChipColors(
-                disabledContainerColor = HubColors.snoozedChip,
-                disabledLabelColor = HubColors.snoozedOnChip,
-                disabledLeadingIconContentColor = HubColors.snoozedOnChip,
-            ),
-        )
-    }
-}
-
-@Composable
 private fun RestoreChip(onRestore: () -> Unit) {
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
         AssistChip(
@@ -220,50 +185,35 @@ private fun RestoreChip(onRestore: () -> Unit) {
     }
 }
 
-/** The app's launcher icon in a rounded square, with an amber "z" badge when [badge] is set. */
+/** The app's launcher icon in a rounded square. */
 @Composable
-fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, badge: Boolean = false, greyscale: Boolean = false) {
+fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, greyscale: Boolean = false) {
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
     val icon = rememberAppIcon(packageName, iconCache, sizePx)
     val label = stringResource(R.string.cd_app_icon, iconCache.label(packageName))
-    Box(modifier = Modifier.semantics { contentDescription = label }) {
-        Box(
-            modifier = Modifier
-                .size(size)
-                .clip(if (size == IconSize) IconShape else RoundedCornerShape(size / 4))
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (icon != null) {
-                Image(
-                    bitmap = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(size),
-                    // A read item keeps its icon but loses its colour, like a BB10 read row.
-                    colorFilter = if (greyscale) GreyscaleFilter else null,
-                )
-            } else {
-                Text(
-                    text = iconCache.label(packageName).take(1).uppercase(),
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = (size.value * 0.4f).sp,
-                )
-            }
-        }
-        if (badge) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 5.dp, y = 5.dp)
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(HubColors.snoozedBar)
-                    .border(2.dp, MaterialTheme.colorScheme.surfaceContainerLowest, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("z", color = HubColors.snoozedOnChip, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-            }
+    Box(
+        modifier = Modifier
+            .semantics { contentDescription = label }
+            .size(size)
+            .clip(if (size == IconSize) IconShape else RoundedCornerShape(size / 4))
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (icon != null) {
+            Image(
+                bitmap = icon,
+                contentDescription = null,
+                modifier = Modifier.size(size),
+                // A read item keeps its icon but loses its colour, like a BB10 read row.
+                colorFilter = if (greyscale) GreyscaleFilter else null,
+            )
+        } else {
+            Text(
+                text = iconCache.label(packageName).take(1).uppercase(),
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = (size.value * 0.4f).sp,
+            )
         }
     }
 }

@@ -9,9 +9,6 @@ val HubSeed = Color(0xFF0B57D0)
 
 /** Hub-specific colours that are not part of the Material colour scheme. */
 object HubColors {
-    val snoozedBar = Color(0xFFE5A900)
-    val snoozedChip = Color(0xFFFFE2A8)
-    val snoozedOnChip = Color(0xFF4A3200)
     val readReveal = Color(0xFFB7F2C7)
     val onReadReveal = Color(0xFF0B3D1A)
 }
