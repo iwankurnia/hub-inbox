@@ -67,4 +67,9 @@ object SnoozeTimes {
             option(labels.monday, monday),
         )
     }
+
+    /** A custom time at or before [nowMs] (say, earlier today) would wake at once; it becomes a minute from now. */
+    fun clampSnoozeTime(pickedMs: Long, nowMs: Long): Long = if (pickedMs <= nowMs) nowMs + MIN_SNOOZE_MS else pickedMs
+
+    private const val MIN_SNOOZE_MS = 60_000L
 }

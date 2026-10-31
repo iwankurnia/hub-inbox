@@ -143,7 +143,8 @@ fun SnoozeDateTimeDialog(
                 TextButton(
                     onClick = {
                         val at = date.atTime(LocalTime.of(timeState.hour, timeState.minute)).atZone(zone)
-                        onPick(at.toInstant().toEpochMilli())
+                        // Today at a time already gone would wake straight away; the dialog may also have been open a while.
+                        onPick(SnoozeTimes.clampSnoozeTime(at.toInstant().toEpochMilli(), System.currentTimeMillis()))
                     },
                 ) { Text(stringResource(android.R.string.ok)) }
             },

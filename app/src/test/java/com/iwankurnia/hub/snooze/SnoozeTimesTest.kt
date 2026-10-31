@@ -54,4 +54,14 @@ class SnoozeTimesTest {
     fun inOneHour_acrossMidnightShowsDay() {
         assertEquals(SnoozeTimes.Option("In 1 hour", "Thu 00:15", at("2026-11-05T00:15")), options("2026-11-04T23:15")[0])
     }
+
+    @Test
+    fun clampSnoozeTime_pastOrNowBecomesOneMinuteAhead() {
+        val now = at("2026-11-04T09:30")
+
+        assertEquals(now + 60_000L, SnoozeTimes.clampSnoozeTime(at("2026-11-04T08:00"), now))
+        assertEquals(now + 60_000L, SnoozeTimes.clampSnoozeTime(now, now))
+        assertEquals(now + 1L, SnoozeTimes.clampSnoozeTime(now + 1L, now))
+        assertEquals(at("2026-11-05T08:00"), SnoozeTimes.clampSnoozeTime(at("2026-11-05T08:00"), now))
+    }
 }
