@@ -341,7 +341,7 @@ private fun HubList(
             val peeked = items.peek(index)
             if (peeked != null && peeked.id in hiddenIds) continue
             if (peeked != null) {
-                val previous = if (index > 0) items.peek(index - 1) else null
+                val previous = previousVisible(items, index, hiddenIds)
                 val at = bandTime(peeked)
                 if (previous == null || !DateBands.sameBand(bandTime(previous), at, nowMs, zone)) {
                     stickyHeader(key = "band-${peeked.id}", contentType = "band") {
@@ -372,6 +372,17 @@ private fun HubList(
             }
         }
     }
+}
+
+/** The nearest row above [index] that is not hidden pending a purge; null at the top or before a placeholder. */
+private fun previousVisible(items: LazyPagingItems<NotificationItem>, index: Int, hiddenIds: Set<Long>): NotificationItem? {
+    var i = index - 1
+    while (i >= 0) {
+        val candidate = items.peek(i) ?: return null
+        if (candidate.id !in hiddenIds) return candidate
+        i--
+    }
+    return null
 }
 
 /** Deleted items band by when they were deleted, everything else by sort time. */

@@ -187,10 +187,14 @@ class HubViewModel internal constructor(
         }
     }
 
-    /** Opens the detail sheet for [id] and marks it read. */
+    /** Opens the detail sheet for [id], marks it read and dismisses its system notification. */
     fun open(id: Long) {
         _openItemId.value = id
-        viewModelScope.launch { repository.markRead(listOf(id)) }
+        viewModelScope.launch {
+            val item = repository.item(id)
+            repository.markRead(listOf(id))
+            item?.let { liveActions.cancel(it.notifKey) }
+        }
     }
 
     fun closeSheet() {

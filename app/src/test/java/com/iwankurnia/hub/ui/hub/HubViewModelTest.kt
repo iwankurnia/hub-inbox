@@ -1,11 +1,13 @@
 package com.iwankurnia.hub.ui.hub
 
+import com.iwankurnia.hub.capture.LiveActions
 import com.iwankurnia.hub.data.HubFilter
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.ui.hub.FakeHubRepository.Companion.item
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -90,9 +92,14 @@ class HubViewModelTest {
 
     @Test
     fun open_marksReadAndSetsOpenItem() = runTest(dispatcher) {
+        val live = RecordingLiveActions()
+        vm = HubViewModel(repo, live, flowOf(30))
+
         vm.open(1)
         assertTrue(repo.get(1).isRead)
         assertEquals(1L, vm.openItemId.value)
+        // Acting in Hub dismisses the system notification.
+        assertEquals(listOf("k1"), live.cancelled)
 
         vm.closeSheet()
         assertNull(vm.openItemId.value)
@@ -153,5 +160,17 @@ class HubViewModelTest {
         vm.filterApp("com.google.android.gm")
         vm.markAllRead()
         assertEquals("com.google.android.gm", repo.markAllReadFor)
+    }
+}
+
+/** Records which notification keys were cancelled. */
+private class RecordingLiveActions : LiveActions {
+    val cancelled = mutableListOf<String>()
+    override fun hasReply(notifKey: String): Boolean = false
+    override fun reply(notifKey: String, text: String): Boolean = false
+    override fun actions(notifKey: String): List<LiveActions.Action> = emptyList()
+    override fun openContent(notifKey: String): Boolean = false
+    override fun cancel(notifKey: String) {
+        cancelled += notifKey
     }
 }

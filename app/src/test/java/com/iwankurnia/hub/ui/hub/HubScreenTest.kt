@@ -8,6 +8,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.iwankurnia.hub.data.HubTab
+import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.ui.hub.FakeHubRepository.Companion.item
 import com.iwankurnia.hub.ui.theme.HubTheme
 import java.time.LocalDate
@@ -27,13 +29,14 @@ class HubScreenTest {
     private val todayNoon = LocalDate.now(zone).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
     private val threeDaysAgo = LocalDate.now(zone).minusDays(3).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
 
-    private fun show(vararg items: com.iwankurnia.hub.data.NotificationItem) {
+    private fun show(vararg items: com.iwankurnia.hub.data.NotificationItem): HubViewModel {
         val vm = HubViewModel(FakeHubRepository(items.toList()))
         compose.setContent {
             HubTheme(dynamicColor = false) {
                 HubScreen(onOpenSearch = {}, onOpenSettings = {}, viewModel = vm)
             }
         }
+        return vm
     }
 
     private fun fontWeightOf(text: String): FontWeight? {
@@ -74,5 +77,22 @@ class HubScreenTest {
         compose.onNodeWithText("Teguh").performTouchInput { longClick() }
 
         compose.onNodeWithText("1 selected").assertExists()
+    }
+
+    @Test
+    fun hiddenRow_keepsBandHeader() {
+        val vm = show(
+            item(1, title = "Shopee", sortAt = todayNoon, state = ItemState.DELETED, deletedAt = todayNoon),
+            item(2, title = "Tokopedia", sortAt = todayNoon - 60_000, state = ItemState.DELETED, deletedAt = todayNoon - 60_000),
+        )
+        compose.runOnIdle { vm.selectTab(HubTab.DELETED) }
+        compose.onNodeWithText("Shopee").assertExists()
+
+        // Swiping the first row of the band away hides it until the purge lands.
+        compose.runOnIdle { vm.purge(1) }
+
+        compose.onNodeWithText("Shopee").assertDoesNotExist()
+        compose.onNodeWithText("Tokopedia").assertExists()
+        compose.onNodeWithText("Today").assertExists()
     }
 }

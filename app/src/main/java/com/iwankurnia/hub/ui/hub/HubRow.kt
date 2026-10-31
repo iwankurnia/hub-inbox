@@ -137,7 +137,7 @@ fun HubRow(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = DateBands.rowTime(item.sortAt, nowMs, zone),
+                            text = DateBands.rowTime(if (deleted) item.deletedAt ?: item.sortAt else item.sortAt, nowMs, zone),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (unread) colors.primary else colors.onSurfaceVariant,
