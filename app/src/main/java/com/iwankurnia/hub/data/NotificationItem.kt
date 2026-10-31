@@ -24,10 +24,8 @@ data class NotificationItem(
     val sender: String?, // author of a group-chat message, null otherwise
     val messageTimestamp: Long?, // MessagingStyle message time, null for non-chat
     val postedAt: Long,
-    val sortAt: Long, // == postedAt until a snooze wakes it
+    val sortAt: Long, // list order; == postedAt
     val state: ItemState = ItemState.ACTIVE,
     val isRead: Boolean = false,
-    val snoozedUntil: Long? = null,
     val deletedAt: Long? = null,
-    val hasReply: Boolean = false,
 )

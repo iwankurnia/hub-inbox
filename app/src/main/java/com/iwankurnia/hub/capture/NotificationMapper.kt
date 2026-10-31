@@ -25,9 +25,6 @@ object NotificationMapper {
             subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString(),
             postedAt = sbn.postTime,
             messages = messages(notification),
-            hasReply = notification.actions.orEmpty().any { action ->
-                action.remoteInputs.orEmpty().any { it.allowFreeFormInput }
-            },
         )
     }
 

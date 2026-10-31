@@ -10,7 +10,6 @@ import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.data.NotificationItem
-import com.iwankurnia.hub.data.ThreadEntry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -35,7 +34,7 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
         if (filter.packageName != null && item.packageName != filter.packageName) return false
         return when (filter.tab) {
             HubTab.ALL -> item.state == ItemState.ACTIVE
-            HubTab.UNREAD -> item.state == ItemState.ACTIVE && !item.isRead && item.snoozedUntil == null
+            HubTab.UNREAD -> item.state == ItemState.ACTIVE && !item.isRead
             HubTab.DELETED -> item.state == ItemState.DELETED
         }
     }
@@ -54,9 +53,7 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
         }.sortedByDescending { it.lastSeenAt }
     }
 
-    override fun thread(item: NotificationItem, limit: Int): Flow<List<ThreadEntry>> = flowOf(emptyList())
     override suspend fun item(id: Long): NotificationItem? = store.value.firstOrNull { it.id == id }
-    override fun itemFlow(id: Long): Flow<NotificationItem?> = store.map { items -> items.firstOrNull { it.id == id } }
     override suspend fun markRead(ids: List<Long>) = update(ids) { it.copy(isRead = true) }
     override suspend fun markUnread(ids: List<Long>) = update(ids) { it.copy(isRead = false) }
     override suspend fun markAllRead(packageName: String?) {
@@ -74,7 +71,7 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
         }.map { it.notifKey }.distinct()
 
     override suspend fun delete(ids: List<Long>) =
-        update(ids) { it.copy(state = ItemState.DELETED, deletedAt = now, snoozedUntil = null) }
+        update(ids) { it.copy(state = ItemState.DELETED, deletedAt = now) }
 
     override suspend fun restore(ids: List<Long>) {
         restored += ids
@@ -91,18 +88,13 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
     }
 
     override suspend fun purgeDeletedOlderThan(cutoffMs: Long) = Unit
-    override suspend fun snooze(ids: List<Long>, untilMs: Long) = update(ids) { it.copy(snoozedUntil = untilMs, isRead = true) }
-    override suspend fun unsnooze(ids: List<Long>) = update(ids) { it.copy(snoozedUntil = null) }
-    override suspend fun wakeDue(nowMs: Long): List<NotificationItem> = emptyList()
-    override suspend fun nextSnoozeAt(): Long? = null
     override fun search(query: String): Flow<List<NotificationItem>> = flowOf(emptyList())
     override suspend fun capture(c: CapturedNotification): CaptureResult = error("not used")
-    override suspend fun recordSentReply(itemId: Long, text: String) = Unit
     override fun appPrefs(): Flow<List<AppPref>> = flowOf(emptyList())
     override suspend fun setAppIncluded(packageName: String, included: Boolean) = Unit
     override suspend fun isAppIncluded(packageName: String): Boolean = true
     override suspend fun latestUnread(limit: Int): List<NotificationItem> =
-        store.value.filter { it.state == ItemState.ACTIVE && !it.isRead && it.snoozedUntil == null }
+        store.value.filter { it.state == ItemState.ACTIVE && !it.isRead }
             .sortedByDescending { it.sortAt }.take(limit)
 
     companion object {
@@ -114,7 +106,6 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
             sortAt: Long = 1_000L,
             isRead: Boolean = false,
             state: ItemState = ItemState.ACTIVE,
-            snoozedUntil: Long? = null,
             deletedAt: Long? = null,
         ) = NotificationItem(
             id = id,
@@ -131,7 +122,6 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
             sortAt = sortAt,
             state = state,
             isRead = isRead,
-            snoozedUntil = snoozedUntil,
             deletedAt = deletedAt,
         )
     }

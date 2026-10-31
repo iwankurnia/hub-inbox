@@ -6,7 +6,6 @@ import com.iwankurnia.hub.data.AppPref
 import com.iwankurnia.hub.data.HubFilter
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.NotificationItem
-import com.iwankurnia.hub.data.ThreadEntry
 import kotlinx.coroutines.flow.Flow
 import java.util.Collections
 
@@ -34,9 +33,7 @@ internal class FakeHubRepository : HubRepository {
     override fun pagedItems(filter: HubFilter): Flow<PagingData<NotificationItem>> = TODO()
     override fun unreadCount(packageName: String?): Flow<Int> = TODO()
     override fun appCounts(): Flow<List<AppCount>> = TODO()
-    override fun thread(item: NotificationItem, limit: Int): Flow<List<ThreadEntry>> = TODO()
     override suspend fun item(id: Long): NotificationItem? = TODO()
-    override fun itemFlow(id: Long): Flow<NotificationItem?> = TODO()
     override suspend fun markRead(ids: List<Long>) = TODO()
     override suspend fun markUnread(ids: List<Long>) = TODO()
     override suspend fun markAllRead(packageName: String?) = TODO()
@@ -48,12 +45,7 @@ internal class FakeHubRepository : HubRepository {
     override suspend fun emptyDeleted() = TODO()
     override suspend fun purgeDeletedOlderThan(cutoffMs: Long) = TODO()
     override suspend fun latestUnread(limit: Int): List<NotificationItem> = TODO()
-    override suspend fun snooze(ids: List<Long>, untilMs: Long) = TODO()
-    override suspend fun unsnooze(ids: List<Long>) = TODO()
-    override suspend fun wakeDue(nowMs: Long): List<NotificationItem> = TODO()
-    override suspend fun nextSnoozeAt(): Long? = TODO()
     override fun search(query: String): Flow<List<NotificationItem>> = TODO()
-    override suspend fun recordSentReply(itemId: Long, text: String) = TODO()
     override fun appPrefs(): Flow<List<AppPref>> = TODO()
     override suspend fun setAppIncluded(packageName: String, included: Boolean) = TODO()
 }

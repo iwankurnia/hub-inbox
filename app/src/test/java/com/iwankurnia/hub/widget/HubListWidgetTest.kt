@@ -83,7 +83,6 @@ class HubListWidgetTest {
         dao.insert(item("middle", 200))
         dao.insert(item("newest", 300))
         dao.insert(item("read", 400).copy(isRead = true))
-        dao.insert(item("snoozed", 500).copy(snoozedUntil = 9_000))
         dao.insert(item("deleted", 600).copy(state = ItemState.DELETED, deletedAt = 600))
 
         assertEquals(listOf("newest", "middle"), repository.latestUnread(2).map { it.title })

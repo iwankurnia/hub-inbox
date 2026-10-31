@@ -66,7 +66,6 @@ class RoomHubRepositoryTest {
         subText = null,
         postedAt = postedAt,
         messages = messages,
-        hasReply = messages.isNotEmpty(),
     )
 
     private fun chat(messages: List<CapturedMessage>, postedAt: Long = 500L) = notif(
@@ -176,132 +175,33 @@ class RoomHubRepositoryTest {
     }
 
     @Test
-    fun capture_skipsEchoedSentReply() = runTest {
+    fun capture_userMessage_isSkipped() = runTest {
         val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
-        val annId = ids(repo.capture(chat(listOf(incoming)))).single()
-        now = 20_000L
-        repo.recordSentReply(annId, "On my way")
-
-        val echoed = CapturedMessage(null, "On my way", 50_000L)
-        val result = repo.capture(chat(listOf(incoming, echoed)))
-
-        assertEquals(CaptureResult.Ignored, result)
-        assertEquals(1, all().size)
-        val late = CapturedMessage(null, "On my way", 200_000L)
-        assertEquals(1, ids(repo.capture(chat(listOf(incoming, late)))).size)
-    }
-
-    @Test
-    fun capture_skipsEchoedSentReply_withSender() = runTest {
-        val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
-        val annId = ids(repo.capture(chat(listOf(incoming)))).single()
-        now = 20_000L
-        repo.recordSentReply(annId, "On my way")
-
-        val echoed = CapturedMessage("Iwan", "On my way", 30_000L)
-
-        assertEquals(CaptureResult.Ignored, repo.capture(chat(listOf(incoming, echoed))))
-        assertEquals(1, all().size)
-    }
-
-    @Test
-    fun capture_userMessage_becomesSentReply_notItem() = runTest {
-        val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
-        val annId = ids(repo.capture(chat(listOf(incoming)))).single()
         val mine = CapturedMessage(null, "Yes, five minutes", 20_000L, fromUser = true)
 
-        assertEquals(CaptureResult.Ignored, repo.capture(chat(listOf(incoming, mine))))
+        val first = repo.capture(chat(listOf(incoming, mine)))
 
+        assertEquals(1, ids(first).size)
+        assertEquals(listOf("Coming?"), all().map { it.text })
+        // A conversation holding only the user's own message stores nothing.
+        assertEquals(CaptureResult.Ignored, repo.capture(chat(listOf(mine))))
         assertEquals(1, all().size)
-        val reply = db.hubDao().repliesForConversation("conv-1").first().single()
-        assertEquals(annId, reply.itemId)
-        assertEquals("Yes, five minutes", reply.text)
-        assertEquals(20_000L, reply.sentAt)
-        val thread = repo.thread(repo.item(annId)!!).first()
-        assertTrue(thread.last() is ThreadEntry.Outgoing)
-
-        // Re-capturing the same notification adds nothing.
-        repo.capture(chat(listOf(incoming, mine)))
-        assertEquals(1, all().size)
-        assertEquals(1, db.hubDao().repliesForConversation("conv-1").first().size)
     }
 
     @Test
-    fun capture_userMessage_redeliveredWithNewTimestamp_isNotRecordedAgain() = runTest {
-        val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
-        repo.capture(chat(listOf(incoming)))
-        val mine = CapturedMessage(null, "Yes, five minutes", 20_000L, fromUser = true)
-        repo.capture(chat(listOf(incoming, mine)))
-
-        // Android's redaction re-stamps the same message well outside the echo window on every delivery.
-        repo.capture(chat(listOf(incoming, mine.copy(timestamp = 20_000L + 10 * 60_000L))))
-        repo.capture(chat(listOf(incoming, mine.copy(timestamp = 20_000L + 3 * 60 * 60_000L))))
-
-        assertEquals(1, db.hubDao().repliesForConversation("conv-1").first().size)
-
-        // A genuinely new message with different text is still recorded.
-        repo.capture(chat(listOf(incoming, mine, CapturedMessage(null, "On my way", 90_000L, fromUser = true))))
-        assertEquals(2, db.hubDao().repliesForConversation("conv-1").first().size)
-    }
-
-    @Test
-    fun capture_userMessage_matchingHubReply_isNotRecordedTwice() = runTest {
-        val annId = ids(repo.capture(chat(listOf(CapturedMessage("Ann", "Coming?", 10_000L))))).single()
-        now = 20_000L
-        repo.recordSentReply(annId, "On my way")
-
-        repo.capture(chat(listOf(CapturedMessage(null, "On my way", 50_000L, fromUser = true))))
-
-        assertEquals(1, db.hubDao().repliesForConversation("conv-1").first().size)
-    }
-
-    @Test
-    fun capture_userMessage_firstInConversation_usesItemIdZero() = runTest {
-        repo.capture(chat(listOf(CapturedMessage(null, "Hello?", 5_000L, fromUser = true))))
-
-        assertEquals(0, all().size)
-        assertEquals(0L, db.hubDao().repliesForConversation("conv-1").first().single().itemId)
-    }
-
-    @Test
-    fun wakeDue_ignoresDeletedItems() = runTest {
-        val id = ids(repo.capture(notif())).single()
-        repo.snooze(listOf(id), untilMs = 2_000_000L)
-
-        repo.delete(listOf(id))
-
-        assertTrue(repo.wakeDue(3_000_000L).isEmpty())
-        val item = repo.item(id)!!
-        assertEquals(ItemState.DELETED, item.state)
-        assertNull(item.snoozedUntil)
-    }
-
-    @Test
-    fun nextSnoozeAt_ignoresDeletedItems() = runTest {
-        val kept = ids(repo.capture(notif(key = "a"))).single()
-        val deleted = ids(repo.capture(notif(key = "b"))).single()
-        repo.snooze(listOf(kept), untilMs = 9_000_000L)
-        repo.snooze(listOf(deleted), untilMs = 2_000_000L)
-
+    fun pagedItems_unreadExcludesReadAndDeleted() = runTest {
+        val read = ids(repo.capture(notif(key = "a", postedAt = 100L))).single()
+        val unread = ids(repo.capture(notif(key = "b", postedAt = 200L))).single()
+        val deleted = ids(repo.capture(notif(key = "c", postedAt = 300L))).single()
+        repo.markRead(listOf(read))
         repo.delete(listOf(deleted))
 
-        assertEquals(9_000_000L, repo.nextSnoozeAt())
-        repo.restore(listOf(deleted))
-        assertNull(repo.item(deleted)!!.snoozedUntil)
-        assertEquals(9_000_000L, repo.nextSnoozeAt())
-    }
+        val unreadTab = repo.pagedItems(HubFilter(HubTab.UNREAD)).asSnapshot()
 
-    @Test
-    fun pagedItems_unreadExcludesSnoozed() = runTest {
-        val a = ids(repo.capture(notif(key = "a", postedAt = 100L))).single()
-        val b = ids(repo.capture(notif(key = "b", postedAt = 200L))).single()
-        repo.snooze(listOf(a), untilMs = 5_000_000L)
-
-        val unread = repo.pagedItems(HubFilter(HubTab.UNREAD)).asSnapshot()
-
-        assertEquals(listOf(b), unread.map { it.id })
-        assertEquals(listOf(b, a), all().map { it.id })
+        assertEquals(listOf(unread), unreadTab.map { it.id })
+        assertEquals(listOf(unread, read), all().map { it.id })
         assertEquals(1, repo.unreadCount().first())
+        assertEquals(listOf(unread), repo.latestUnread(10).map { it.id })
     }
 
     @Test
@@ -327,40 +227,6 @@ class RoomHubRepositoryTest {
     }
 
     @Test
-    fun snooze_marksReadAndSetsUntil() = runTest {
-        val id = ids(repo.capture(notif())).single()
-
-        repo.snooze(listOf(id), untilMs = 7_000_000L)
-
-        val item = repo.item(id)!!
-        assertTrue(item.isRead)
-        assertEquals(7_000_000L, item.snoozedUntil)
-        assertEquals(7_000_000L, repo.nextSnoozeAt())
-        repo.unsnooze(listOf(id))
-        assertNull(repo.item(id)!!.snoozedUntil)
-        assertNull(repo.nextSnoozeAt())
-    }
-
-    @Test
-    fun wakeDue_resetsUnreadAndMovesToTop() = runTest {
-        val older = ids(repo.capture(notif(key = "a", postedAt = 100L))).single()
-        val newer = ids(repo.capture(notif(key = "b", postedAt = 200L))).single()
-        repo.snooze(listOf(older), untilMs = 2_000_000L)
-        now = 2_000_001L
-
-        val woken = repo.wakeDue(now)
-
-        assertEquals(listOf(older), woken.map { it.id })
-        val item = repo.item(older)!!
-        assertFalse(item.isRead)
-        assertNull(item.snoozedUntil)
-        assertEquals(2_000_001L, item.sortAt)
-        assertEquals(100L, item.postedAt)
-        assertEquals(listOf(older, newer), all().map { it.id })
-        assertTrue(repo.wakeDue(now).isEmpty())
-    }
-
-    @Test
     fun search_matchesTitleAndText() = runTest {
         val byTitle = ids(repo.capture(notif(key = "a", title = "Matthew Lee", text = "Hello"))).single()
         val byText = ids(repo.capture(notif(key = "b", title = "Build bot", text = "Deployment finished"))).single()
@@ -372,26 +238,6 @@ class RoomHubRepositoryTest {
         assertTrue(repo.search("  ").first().isEmpty())
         repo.delete(listOf(byTitle))
         assertEquals(listOf(byTitle), repo.search("matthew").first().map { it.id })
-    }
-
-    @Test
-    fun thread_interleavesRepliesByTime() = runTest {
-        val first = ids(repo.capture(chat(listOf(CapturedMessage("Ann", "Coming?", 1_000L))))).single()
-        now = 2_000L
-        repo.recordSentReply(first, "Yes")
-        val second = ids(
-            repo.capture(
-                chat(listOf(CapturedMessage("Ann", "Coming?", 1_000L), CapturedMessage("Ann", "Great", 3_000L))),
-            ),
-        ).single()
-        repo.capture(notif(key = "other", pkg = "com.whatsapp", title = "Family"))
-
-        val entries = repo.thread(repo.item(second)!!).first()
-
-        assertEquals(3, entries.size)
-        assertEquals(first, (entries[0] as ThreadEntry.Incoming).item.id)
-        assertEquals("Yes", (entries[1] as ThreadEntry.Outgoing).reply.text)
-        assertEquals(second, (entries[2] as ThreadEntry.Incoming).item.id)
     }
 
     @Test

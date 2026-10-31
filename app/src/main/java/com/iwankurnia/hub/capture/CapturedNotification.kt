@@ -14,7 +14,6 @@ data class CapturedNotification(
     val subText: String?,
     val postedAt: Long,
     val messages: List<CapturedMessage>, // empty for non-chat
-    val hasReply: Boolean,
 )
 
 /** Outcome of a capture. */

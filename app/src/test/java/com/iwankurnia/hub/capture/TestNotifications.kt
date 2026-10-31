@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Process
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
-import androidx.core.app.RemoteInput
 
 /** Builders for real notifications wrapped the way the system hands them to a listener. */
 internal object TestNotifications {
@@ -29,12 +28,4 @@ internal object TestNotifications {
 
     fun pendingIntent(context: Context, action: String): PendingIntent =
         PendingIntent.getBroadcast(context, action.hashCode(), Intent(action), PendingIntent.FLAG_MUTABLE)
-
-    fun replyAction(context: Context): NotificationCompat.Action =
-        NotificationCompat.Action.Builder(0, "Reply", pendingIntent(context, "reply"))
-            .addRemoteInput(RemoteInput.Builder("reply_text").setLabel("Reply").build())
-            .build()
-
-    fun plainAction(context: Context, title: String): NotificationCompat.Action =
-        NotificationCompat.Action.Builder(0, title, pendingIntent(context, title)).build()
 }

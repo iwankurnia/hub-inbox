@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.iwankurnia.hub.capture.TestNotifications.builder
 import com.iwankurnia.hub.capture.TestNotifications.sbn
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,7 +41,6 @@ class NotificationMapperTest {
         assertEquals("work@example.com", c.subText)
         assertEquals(4_242L, c.postedAt)
         assertTrue(c.messages.isEmpty())
-        assertFalse(c.hasReply)
     }
 
     @Test
@@ -98,20 +96,6 @@ class NotificationMapperTest {
         val c = NotificationMapper.map(sbn(notification), context)
 
         assertEquals(listOf(false, true, true), c.messages.map { it.fromUser })
-    }
-
-    @Test
-    fun map_remoteInput_setsHasReply() {
-        val withReply = builder(context).setContentTitle("Anna")
-            .addAction(TestNotifications.plainAction(context, "Mark as read"))
-            .addAction(TestNotifications.replyAction(context))
-            .build()
-        val withoutReply = builder(context).setContentTitle("Anna")
-            .addAction(TestNotifications.plainAction(context, "Mark as read"))
-            .build()
-
-        assertTrue(NotificationMapper.map(sbn(withReply), context).hasReply)
-        assertFalse(NotificationMapper.map(sbn(withoutReply), context).hasReply)
     }
 
     @Test

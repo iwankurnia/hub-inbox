@@ -256,12 +256,7 @@ class HubViewModel internal constructor(
             offerUndo(
                 UndoAction(
                     label = before.singleOrNull()?.title.orEmpty(),
-                    revert = {
-                        repository.restore(ids)
-                        // Delete clears the snooze; put sleeping items back to sleep.
-                        before.filter { it.snoozedUntil != null }.groupBy { it.snoozedUntil!! }
-                            .forEach { (until, sleeping) -> repository.snooze(sleeping.map { it.id }, until) }
-                    },
+                    revert = { repository.restore(ids) },
                     kind = UndoKind.DELETE,
                     count = ids.size,
                 ),

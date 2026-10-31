@@ -28,7 +28,10 @@ abstract class AppModule {
         @Provides
         @Singleton
         fun provideDatabase(@ApplicationContext ctx: Context): HubDatabase =
-            Room.databaseBuilder(ctx, HubDatabase::class.java, "hub.db").build()
+            Room.databaseBuilder(ctx, HubDatabase::class.java, "hub.db")
+                // Hub is sideloaded and keeps nothing worth migrating: a schema change starts afresh.
+                .fallbackToDestructiveMigration(dropAllTables = true)
+                .build()
 
         @Provides
         fun provideHubDao(db: HubDatabase): HubDao = db.hubDao()

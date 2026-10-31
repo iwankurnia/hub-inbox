@@ -9,20 +9,16 @@ import com.iwankurnia.hub.data.HubFilter
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.data.NotificationItem
-import com.iwankurnia.hub.data.SentReply
-import com.iwankurnia.hub.data.ThreadEntry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
-/** A small in-memory [HubRepository] for Track C's view-model and receiver tests. */
+/** A small in-memory [HubRepository] for view-model tests. */
 class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubRepository {
 
     val items = MutableStateFlow<List<NotificationItem>>(emptyList())
-    val replies = MutableStateFlow<List<SentReply>>(emptyList())
     val prefs = MutableStateFlow<List<AppPref>>(emptyList())
     val counts = MutableStateFlow<List<AppCount>>(emptyList())
 
@@ -44,20 +40,7 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
 
     override fun appCounts(): Flow<List<AppCount>> = counts
 
-    override fun thread(item: NotificationItem, limit: Int): Flow<List<ThreadEntry>> =
-        combine(items, replies) { list, sent ->
-            val incoming = list.filter {
-                it.packageName == item.packageName &&
-                    (if (item.conversationId != null) it.conversationId == item.conversationId else it.title == item.title)
-            }.map { ThreadEntry.Incoming(it) to it.postedAt }
-            val outgoing = sent.filter { it.itemId in list.map(NotificationItem::id) }
-                .map { ThreadEntry.Outgoing(it) to it.sentAt }
-            (incoming + outgoing).sortedBy { it.second }.map { it.first }.takeLast(limit)
-        }
-
     override suspend fun item(id: Long): NotificationItem? = items.value.firstOrNull { it.id == id }
-
-    override fun itemFlow(id: Long): Flow<NotificationItem?> = items.map { list -> list.firstOrNull { it.id == id } }
 
     override suspend fun markRead(ids: List<Long>) {
         markReadCalls += ids
@@ -81,7 +64,7 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
         }.map { it.notifKey }.distinct()
 
     override suspend fun delete(ids: List<Long>) =
-        change(ids) { it.copy(state = ItemState.DELETED, deletedAt = clock(), snoozedUntil = null) }
+        change(ids) { it.copy(state = ItemState.DELETED, deletedAt = clock()) }
 
     override suspend fun restore(ids: List<Long>) = change(ids) { it.copy(state = ItemState.ACTIVE, deletedAt = null) }
 
@@ -92,20 +75,6 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
     override suspend fun purgeDeletedOlderThan(cutoffMs: Long) =
         items.update { list -> list.filterNot { it.state == ItemState.DELETED && (it.deletedAt ?: 0) < cutoffMs } }
 
-    override suspend fun snooze(ids: List<Long>, untilMs: Long) =
-        change(ids) { it.copy(snoozedUntil = untilMs, isRead = true) }
-
-    override suspend fun unsnooze(ids: List<Long>) = change(ids) { it.copy(snoozedUntil = null) }
-
-    override suspend fun wakeDue(nowMs: Long): List<NotificationItem> {
-        val due = items.value.filter { it.state == ItemState.ACTIVE && (it.snoozedUntil ?: Long.MAX_VALUE) <= nowMs }
-        change(due.map { it.id }) { it.copy(snoozedUntil = null, isRead = false, sortAt = nowMs) }
-        return due.map { it.copy(snoozedUntil = null, isRead = false, sortAt = nowMs) }
-    }
-
-    override suspend fun nextSnoozeAt(): Long? =
-        items.value.filter { it.state == ItemState.ACTIVE }.mapNotNull { it.snoozedUntil }.minOrNull()
-
     override fun search(query: String): Flow<List<NotificationItem>> {
         searches += query
         return items.map { list ->
@@ -115,11 +84,6 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
     }
 
     override suspend fun capture(c: CapturedNotification): CaptureResult = CaptureResult.Ignored
-
-    override suspend fun recordSentReply(itemId: Long, text: String) {
-        val item = item(itemId)
-        replies.update { it + SentReply(it.size + 1L, itemId, item?.conversationId, text, clock()) }
-    }
 
     override fun appPrefs(): Flow<List<AppPref>> = prefs
 
@@ -146,7 +110,6 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
             postedAt: Long = 0L,
             state: ItemState = ItemState.ACTIVE,
             isRead: Boolean = false,
-            snoozedUntil: Long? = null,
         ) = NotificationItem(
             id = id,
             packageName = packageName,
@@ -162,11 +125,10 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
             sortAt = postedAt,
             state = state,
             isRead = isRead,
-            snoozedUntil = snoozedUntil,
         )
     }
 
     override suspend fun latestUnread(limit: Int): List<NotificationItem> =
-        items.value.filter { it.state == ItemState.ACTIVE && !it.isRead && it.snoozedUntil == null }
+        items.value.filter { it.state == ItemState.ACTIVE && !it.isRead }
             .sortedByDescending { it.sortAt }.take(limit)
 }

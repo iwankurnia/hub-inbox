@@ -61,7 +61,6 @@ class HubListenerServiceTest {
     private fun chat(id: Int, pkg: String = TestNotifications.PKG) = sbn(
         builder(context).setContentTitle("Anna").setContentText("Lunch?")
             .setContentIntent(TestNotifications.pendingIntent(context, "open"))
-            .addAction(TestNotifications.replyAction(context))
             .build(),
         pkg = pkg,
         id = id,
@@ -110,7 +109,6 @@ class HubListenerServiceTest {
 
         assertEquals(listOf(posted.key), repository.captured.map { it.notifKey })
         assertEquals("Anna", repository.captured.single().title)
-        assertTrue(repository.captured.single().hasReply)
         assertTrue(registry.openContent(posted.key))
         assertFalse(registry.openContent(ongoing.key))
     }

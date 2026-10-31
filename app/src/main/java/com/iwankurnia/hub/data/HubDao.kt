@@ -20,7 +20,7 @@ interface HubDao {
     fun pagingAll(pkg: String?): PagingSource<Int, NotificationItem>
 
     @Query(
-        "SELECT * FROM items WHERE state = 'ACTIVE' AND isRead = 0 AND snoozedUntil IS NULL " +
+        "SELECT * FROM items WHERE state = 'ACTIVE' AND isRead = 0 " +
             "AND (:pkg IS NULL OR packageName = :pkg) ORDER BY sortAt DESC, id DESC",
     )
     fun pagingUnread(pkg: String?): PagingSource<Int, NotificationItem>
@@ -32,51 +32,23 @@ interface HubDao {
     fun pagingDeleted(pkg: String?): PagingSource<Int, NotificationItem>
 
     @Query(
-        "SELECT COUNT(*) FROM items WHERE state = 'ACTIVE' AND isRead = 0 AND snoozedUntil IS NULL " +
+        "SELECT COUNT(*) FROM items WHERE state = 'ACTIVE' AND isRead = 0 " +
             "AND (:pkg IS NULL OR packageName = :pkg)",
     )
     fun unreadCount(pkg: String?): Flow<Int>
 
     @Query(
         "SELECT packageName, " +
-            "SUM(CASE WHEN isRead = 0 AND snoozedUntil IS NULL THEN 1 ELSE 0 END) AS unread, " +
+            "SUM(CASE WHEN isRead = 0 THEN 1 ELSE 0 END) AS unread, " +
             "COUNT(*) AS total, MAX(postedAt) AS lastSeenAt " +
             "FROM items WHERE state = 'ACTIVE' GROUP BY packageName ORDER BY lastSeenAt DESC",
     )
     fun appCounts(): Flow<List<AppCount>>
 
-    // Threads
-
-    /** The latest [limit] items of a conversation, returned oldest first. */
-    @Query(
-        "SELECT * FROM (SELECT * FROM items WHERE packageName = :pkg AND conversationId = :conversationId " +
-            "ORDER BY postedAt DESC, id DESC LIMIT :limit) ORDER BY postedAt ASC, id ASC",
-    )
-    fun threadByConversation(pkg: String, conversationId: String, limit: Int): Flow<List<NotificationItem>>
-
-    /** The latest [limit] items with this title, returned oldest first. */
-    @Query(
-        "SELECT * FROM (SELECT * FROM items WHERE packageName = :pkg AND title = :title " +
-            "ORDER BY postedAt DESC, id DESC LIMIT :limit) ORDER BY postedAt ASC, id ASC",
-    )
-    fun threadByTitle(pkg: String, title: String, limit: Int): Flow<List<NotificationItem>>
-
-    @Query("SELECT * FROM sent_replies WHERE conversationId = :conversationId ORDER BY sentAt ASC, id ASC")
-    fun repliesForConversation(conversationId: String): Flow<List<SentReply>>
-
-    @Query("SELECT * FROM sent_replies WHERE itemId IN (:itemIds) ORDER BY sentAt ASC, id ASC")
-    fun repliesForItems(itemIds: List<Long>): Flow<List<SentReply>>
-
     // Single items
 
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun item(id: Long): NotificationItem?
-
-    @Query("SELECT * FROM items WHERE id = :id")
-    fun itemFlow(id: Long): Flow<NotificationItem?>
-
-    @Query("SELECT * FROM items WHERE id IN (:ids)")
-    suspend fun items(ids: List<Long>): List<NotificationItem>
 
     @Query("SELECT DISTINCT notifKey FROM items WHERE id IN (:ids)")
     suspend fun notifKeys(ids: List<Long>): List<String>
@@ -106,7 +78,7 @@ interface HubDao {
 
     // Deleted bin
 
-    @Query("UPDATE items SET state = 'DELETED', deletedAt = :now, snoozedUntil = NULL WHERE id IN (:ids)")
+    @Query("UPDATE items SET state = 'DELETED', deletedAt = :now WHERE id IN (:ids)")
     suspend fun delete(ids: List<Long>, now: Long)
 
     @Query("UPDATE items SET state = 'ACTIVE', deletedAt = NULL WHERE id IN (:ids)")
@@ -120,23 +92,6 @@ interface HubDao {
 
     @Query("DELETE FROM items WHERE state = 'DELETED' AND deletedAt < :cutoffMs")
     suspend fun purgeDeletedOlderThan(cutoffMs: Long)
-
-    // Snooze
-
-    @Query("UPDATE items SET snoozedUntil = :untilMs, isRead = 1 WHERE id IN (:ids)")
-    suspend fun snooze(ids: List<Long>, untilMs: Long)
-
-    @Query("UPDATE items SET snoozedUntil = NULL WHERE id IN (:ids)")
-    suspend fun unsnooze(ids: List<Long>)
-
-    @Query("SELECT id FROM items WHERE state = 'ACTIVE' AND snoozedUntil IS NOT NULL AND snoozedUntil <= :nowMs")
-    suspend fun dueSnoozeIds(nowMs: Long): List<Long>
-
-    @Query("UPDATE items SET snoozedUntil = NULL, isRead = 0, sortAt = :nowMs WHERE id IN (:ids)")
-    suspend fun wake(ids: List<Long>, nowMs: Long)
-
-    @Query("SELECT MIN(snoozedUntil) FROM items WHERE state = 'ACTIVE' AND snoozedUntil IS NOT NULL")
-    suspend fun nextSnoozeAt(): Long?
 
     // Search
 
@@ -163,25 +118,6 @@ interface HubDao {
     )
     suspend fun messageExists(notifKey: String, sender: String?, text: String, messageTimestamp: Long): Boolean
 
-    @Query(
-        "SELECT id FROM items WHERE packageName = :pkg AND conversationId = :conversationId " +
-            "ORDER BY postedAt DESC, id DESC LIMIT 1",
-    )
-    suspend fun newestIdInConversation(pkg: String, conversationId: String): Long?
-
-    @Query(
-        "SELECT COUNT(*) > 0 FROM sent_replies WHERE conversationId IS :conversationId AND text = :text " +
-            "AND sentAt BETWEEN :fromMs AND :toMs",
-    )
-    suspend fun sentReplyExists(conversationId: String?, text: String, fromMs: Long, toMs: Long): Boolean
-
-    /** Text of the most recent reply recorded in a conversation, or null when there is none. */
-    @Query("SELECT text FROM sent_replies WHERE conversationId IS :conversationId ORDER BY sentAt DESC, id DESC LIMIT 1")
-    suspend fun newestReplyText(conversationId: String?): String?
-
-    @Insert
-    suspend fun insertReply(reply: SentReply): Long
-
     // App preferences
 
     @Query("SELECT * FROM app_prefs ORDER BY packageName")
@@ -202,8 +138,7 @@ interface HubDao {
     // Widgets
 
     @Query(
-        "SELECT * FROM items WHERE state = 'ACTIVE' AND isRead = 0 AND snoozedUntil IS NULL " +
-            "ORDER BY sortAt DESC, id DESC LIMIT :limit",
+        "SELECT * FROM items WHERE state = 'ACTIVE' AND isRead = 0 ORDER BY sortAt DESC, id DESC LIMIT :limit",
     )
     suspend fun latestUnread(limit: Int): List<NotificationItem>
 }

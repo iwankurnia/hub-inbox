@@ -4,8 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [NotificationItem::class, SentReply::class, AppPref::class, ItemFts::class],
-    version = 1,
+    entities = [NotificationItem::class, AppPref::class, ItemFts::class],
+    version = 2,
     exportSchema = true,
 )
 abstract class HubDatabase : RoomDatabase() {

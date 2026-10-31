@@ -35,7 +35,7 @@ class HubViewModelTest {
         repo = FakeHubRepository(
             listOf(
                 item(1, title = "Teguh", sortAt = 3_000L),
-                item(2, title = "Okky", sortAt = 2_000L, snoozedUntil = 9_000L, isRead = true),
+                item(2, title = "Okky", sortAt = 2_000L, isRead = true),
                 item(3, title = "Bitbucket", sortAt = 1_000L, pkg = "com.google.android.gm"),
             ),
         )
@@ -157,10 +157,10 @@ class HubViewModelTest {
         assertTrue(vm.selection.value.isEmpty())
         assertEquals(2, vm.undo.value?.count)
 
-        // Undo brings both back, and the snoozed one goes back to sleep.
+        // Undo brings both back.
         vm.undo()
+        assertEquals(ItemState.ACTIVE, repo.get(1).state)
         assertEquals(ItemState.ACTIVE, repo.get(2).state)
-        assertEquals(9_000L, repo.get(2).snoozedUntil)
     }
 
     @Test
@@ -195,7 +195,7 @@ class HubViewModelTest {
 
         vm.filterApp("com.whatsapp")
         vm.markAllRead()
-        // Item 2 is already read (snoozed), so only item 1 of WhatsApp had a notification to clear.
+        // Item 2 is already read, so only item 1 of WhatsApp had a notification to clear.
         assertEquals(listOf("k1"), live.cancelled)
 
         vm.filterApp(null)

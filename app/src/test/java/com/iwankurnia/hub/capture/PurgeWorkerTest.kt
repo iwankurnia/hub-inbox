@@ -86,7 +86,6 @@ class PurgeWorkerTest {
                 subText = null,
                 postedAt = now,
                 messages = emptyList(),
-                hasReply = false,
             ),
         )
         return (result as CaptureResult.Inserted).ids.single()
