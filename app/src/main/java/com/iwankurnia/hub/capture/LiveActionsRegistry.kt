@@ -33,7 +33,8 @@ class LiveActionsRegistry @Inject constructor(
 
     fun register(sbn: StatusBarNotification) {
         val notification = sbn.notification
-        val all = notification.actions.orEmpty().toList()
+        // Some compat actions carry no intent; they could never be sent, so they are not offered.
+        val all = notification.actions.orEmpty().filter { it.actionIntent != null }
         val reply = all.firstOrNull { action -> action.remoteInputs.orEmpty().any { it.allowFreeFormInput } }
         live[sbn.key] = Live(
             reply = reply,
@@ -56,12 +57,14 @@ class LiveActionsRegistry @Inject constructor(
         val intent = Intent()
         val results = Bundle().apply { putCharSequence(input.resultKey, text) }
         RemoteInput.addResultsToIntent(action.remoteInputs, intent, results)
-        return send { action.actionIntent.send(context, 0, intent) }
+        val pendingIntent = action.actionIntent ?: return false
+        return send { pendingIntent.send(context, 0, intent) }
     }
 
     override fun actions(notifKey: String): List<LiveActions.Action> =
-        live[notifKey]?.actions.orEmpty().map { action ->
-            LiveActions.Action(title = action.title?.toString().orEmpty(), send = { send { action.actionIntent.send() } })
+        live[notifKey]?.actions.orEmpty().mapNotNull { action ->
+            val pendingIntent = action.actionIntent ?: return@mapNotNull null
+            LiveActions.Action(title = action.title?.toString().orEmpty(), send = { send { pendingIntent.send() } })
         }
 
     override fun openContent(notifKey: String): Boolean {

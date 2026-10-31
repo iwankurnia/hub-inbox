@@ -14,15 +14,19 @@ import java.util.Collections
 internal class FakeHubRepository : HubRepository {
     val captured: MutableList<CapturedNotification> = Collections.synchronizedList(mutableListOf())
     val markedReadKeys: MutableList<String> = Collections.synchronizedList(mutableListOf())
+    /** Every capture and mark-read, in the order the listener made them. */
+    val calls: MutableList<String> = Collections.synchronizedList(mutableListOf())
     var excludedPackages: Set<String> = emptySet()
 
     override suspend fun capture(c: CapturedNotification): CaptureResult {
         captured += c
+        calls += "capture:${c.notifKey}"
         return CaptureResult.Inserted(listOf(captured.size.toLong()))
     }
 
     override suspend fun markReadByKey(notifKey: String) {
         markedReadKeys += notifKey
+        calls += "markRead:$notifKey"
     }
 
     override suspend fun isAppIncluded(packageName: String): Boolean = packageName !in excludedPackages

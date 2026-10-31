@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Looper
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -78,5 +79,25 @@ class LiveActionsRegistryTest {
         registry.unregister(chat.key)
         assertTrue(registry.actions(chat.key).isEmpty())
         assertFalse(registry.openContent(chat.key))
+    }
+
+    @Test
+    fun actions_withoutIntent_areSkipped() {
+        val noIntent = NotificationCompat.Action.Builder(0, "Broken", null).build()
+        val noIntentReply = NotificationCompat.Action.Builder(0, "Reply", null)
+            .addRemoteInput(androidx.core.app.RemoteInput.Builder("reply_text").setLabel("Reply").build())
+            .build()
+        val chat = sbn(
+            builder(context).setContentTitle("Anna")
+                .addAction(noIntent)
+                .addAction(noIntentReply)
+                .addAction(TestNotifications.plainAction(context, "Mute"))
+                .build(),
+        )
+        registry.register(chat)
+
+        assertEquals(listOf("Mute"), registry.actions(chat.key).map { it.title })
+        assertFalse(registry.hasReply(chat.key))
+        assertFalse(registry.reply(chat.key, "On my way"))
     }
 }

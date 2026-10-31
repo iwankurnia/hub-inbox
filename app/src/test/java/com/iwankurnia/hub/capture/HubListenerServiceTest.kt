@@ -12,8 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.job
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -57,8 +55,8 @@ class HubListenerServiceTest {
         prefsScope.cancel()
     }
 
-    /** Waits for the work the service launched on its scope. */
-    private fun settle() = runBlocking { service.scope.coroutineContext.job.children.toList().joinAll() }
+    /** Waits until the service has processed every event handed to it so far. */
+    private fun settle() = runBlocking { service.awaitIdle() }
 
     private fun chat(id: Int, pkg: String = TestNotifications.PKG) = sbn(
         builder(context).setContentTitle("Anna").setContentText("Lunch?")
@@ -114,5 +112,35 @@ class HubListenerServiceTest {
         assertTrue(repository.captured.single().hasReply)
         assertTrue(registry.hasReply(posted.key))
         assertFalse(registry.hasReply(ongoing.key))
+    }
+
+    @Test
+    fun posted_mapperThrows_doesNotCrashService() {
+        val bad = chat(1)
+        val good = chat(2)
+        service.mapNotification = { sbn, context ->
+            if (sbn.key == bad.key) throw IllegalArgumentException("malformed extras") else NotificationMapper.map(sbn, context)
+        }
+
+        service.onNotificationPosted(bad, null)
+        service.onNotificationPosted(good, null)
+        settle()
+
+        assertEquals(listOf(good.key), repository.captured.map { it.notifKey })
+        assertFalse(registry.hasReply(bad.key))
+        assertTrue(registry.hasReply(good.key))
+    }
+
+    @Test
+    fun removal_afterPost_isProcessedInOrder() {
+        val posted = chat(1)
+
+        service.onNotificationPosted(posted, null)
+        service.onNotificationRemoved(posted, null, NotificationListenerService.REASON_APP_CANCEL)
+        settle()
+
+        assertEquals(listOf("capture:${posted.key}", "markRead:${posted.key}"), repository.calls)
+        assertFalse(registry.hasReply(posted.key))
+        assertTrue(registry.actions(posted.key).isEmpty())
     }
 }
