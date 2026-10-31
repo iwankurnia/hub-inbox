@@ -65,14 +65,13 @@ class SnoozeSchedulerTest {
         scheduler.reschedule()
 
         val alarm = shadowOf(alarmManager).scheduledAlarms.single()
-        assertEquals(5_000L, alarm.triggerAtTime)
-        assertEquals(AlarmManager.RTC_WAKEUP, alarm.type)
-        assertTrue(alarm.allowWhileIdle)
+        assertEquals(5_000L, alarm.triggerAtMs)
+        assertEquals(AlarmManager.RTC_WAKEUP, alarm.getType())
+        assertTrue(alarm.isAllowWhileIdle)
         assertEquals(ShadowAlarmManager.WINDOW_EXACT, alarm.windowLengthMs)
-        assertEquals(
-            SnoozeWakeReceiver::class.java.name,
-            shadowOf(alarm.operation).savedIntent.component?.className,
-        )
+        @Suppress("DEPRECATION") // ScheduledAlarm has no getter for the PendingIntent yet.
+        val operation = alarm.operation
+        assertEquals(SnoozeWakeReceiver::class.java.name, shadowOf(operation).savedIntent.component?.className)
     }
 
     @Test
@@ -83,8 +82,8 @@ class SnoozeSchedulerTest {
         scheduler.reschedule()
 
         val alarm = shadowOf(alarmManager).scheduledAlarms.single()
-        assertEquals(5_000L, alarm.triggerAtTime)
-        assertTrue(alarm.allowWhileIdle)
+        assertEquals(5_000L, alarm.triggerAtMs)
+        assertTrue(alarm.isAllowWhileIdle)
         assertEquals(ShadowAlarmManager.WINDOW_HEURISTIC, alarm.windowLengthMs)
     }
 
@@ -121,7 +120,7 @@ class SnoozeSchedulerTest {
         val woken = repository.item(1)!!
         assertFalse(woken.isRead)
         assertNull(woken.snoozedUntil)
-        assertEquals(5_000L, shadowOf(alarmManager).scheduledAlarms.single().triggerAtTime)
+        assertEquals(5_000L, shadowOf(alarmManager).scheduledAlarms.single().triggerAtMs)
     }
 
     @Test

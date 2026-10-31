@@ -98,6 +98,7 @@
     <string name="settings_section_apps">Apps in Hub</string>
     <string name="settings_app_today_count">%1$d today</string>
     <string name="settings_app_hidden">Hidden from Hub</string>
+    <string name="settings_app_counts">%1$d in Hub · %2$d unread</string>
     <string name="settings_more_apps">%1$d more apps…</string>
     <string name="settings_section_behaviour">Behaviour</string>
     <string name="settings_keep_deleted">Keep deleted items</string>
@@ -107,6 +108,7 @@
     <string name="settings_keep_deleted_forever">Forever</string>
     <string name="settings_snooze_wake_up">Snooze wake-up</string>
     <string name="settings_snooze_wake_up_summary">Mark unread, move to top, notify</string>
+    <string name="settings_snooze_notify_summary">Notify when an item wakes</string>
     <string name="settings_hide_silent">Hide silent notifications</string>
     <string name="settings_hide_silent_summary">Ones Android shows silently</string>
     <string name="settings_section_system">System</string>

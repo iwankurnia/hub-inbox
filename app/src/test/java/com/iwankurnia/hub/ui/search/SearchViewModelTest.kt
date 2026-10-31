@@ -2,6 +2,7 @@ package com.iwankurnia.hub.ui.search
 
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.iwankurnia.hub.data.HubPrefs
@@ -56,8 +57,9 @@ class SearchViewModelTest {
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+        vm.viewModelScope.cancel()
         scope.cancel()
+        Dispatchers.resetMain()
     }
 
     @Test

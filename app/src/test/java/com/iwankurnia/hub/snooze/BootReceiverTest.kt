@@ -34,7 +34,7 @@ class BootReceiverTest {
 
         receiver.handle(Intent(Intent.ACTION_BOOT_COMPLETED))
 
-        assertEquals(7_000L, shadowOf(alarmManager).scheduledAlarms.single().triggerAtTime)
+        assertEquals(7_000L, shadowOf(alarmManager).scheduledAlarms.single().triggerAtMs)
     }
 
     @Test

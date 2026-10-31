@@ -104,7 +104,7 @@ class DetailViewModelTest {
         assertEquals(until, repository.item(1)!!.snoozedUntil)
         assertEquals(listOf("key-1"), liveActions.cancelled)
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        assertEquals(until, shadowOf(alarmManager).scheduledAlarms.single().triggerAtTime)
+        assertEquals(until, shadowOf(alarmManager).scheduledAlarms.single().triggerAtMs)
     }
 
     @Test
