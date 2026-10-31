@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.iwankurnia.hub.data.ItemState
+import com.iwankurnia.hub.data.ThreadEntry
 import com.iwankurnia.hub.icon.AppIconCache
 import com.iwankurnia.hub.snooze.SnoozeScheduler
 import com.iwankurnia.hub.testing.InMemoryHubRepository
@@ -12,6 +13,8 @@ import com.iwankurnia.hub.testing.InMemoryHubRepository.Companion.item
 import com.iwankurnia.hub.testing.RecordingLiveActions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -51,19 +54,28 @@ class DetailViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = DetailViewModel(
-        itemId = 1L,
+    private fun viewModel(itemId: Long = 1L) = DetailViewModel(
         context = context,
         repository = repository,
         liveActions = liveActions,
         scheduler = SnoozeScheduler(context, repository),
         iconCache = AppIconCache(context),
         clock = { now },
-    )
+    ).apply { setItem(itemId) }
+
+    /** Collects the sheet's flows the way the open sheet does; they only run while someone is watching. */
+    private fun TestScope.watch(vm: DetailViewModel) {
+        val watcher = UnconfinedTestDispatcher(testScheduler)
+        backgroundScope.launch(watcher) { vm.item.collect {} }
+        backgroundScope.launch(watcher) { vm.thread.collect {} }
+        backgroundScope.launch(watcher) { vm.weekCount.collect {} }
+        backgroundScope.launch(watcher) { vm.canReply.collect {} }
+    }
 
     @Test
     fun open_marksReadAndCountsThisWeek() = runTest {
         val vm = viewModel()
+        watch(vm)
         vm.onOpened()
 
         assertTrue(repository.item(1)!!.isRead)
@@ -80,6 +92,24 @@ class DetailViewModelTest {
         vm.onOpened()
 
         assertEquals(listOf("key-1"), liveActions.cancelled)
+    }
+
+    @Test
+    fun switchingItem_switchesFlows() = runTest {
+        repository.add(item(4, title = "Okky", text = "Standup?", conversationId = "conv-2", postedAt = now - HOUR))
+        val vm = viewModel()
+        watch(vm)
+        assertEquals(1L, vm.item.value?.id)
+        assertEquals(3, vm.thread.value.size)
+
+        vm.setItem(4)
+
+        assertEquals(4L, vm.item.value?.id)
+        assertEquals(listOf("Standup?"), vm.thread.value.map { (it as ThreadEntry.Incoming).item.text })
+        assertEquals(1, vm.weekCount.value)
+        vm.onOpened()
+        assertTrue(repository.item(4)!!.isRead)
+        assertFalse(repository.item(1)!!.isRead)
     }
 
     @Test
@@ -108,6 +138,7 @@ class DetailViewModelTest {
     @Test
     fun reply_recordsSentReplyOnSuccess() = runTest {
         val vm = viewModel()
+        watch(vm)
 
         assertTrue(vm.reply("  On my way "))
 
@@ -121,6 +152,7 @@ class DetailViewModelTest {
     fun reply_doesNothingOnFailure() = runTest {
         liveActions.replySucceeds = false
         val vm = viewModel()
+        watch(vm)
 
         assertFalse(vm.reply("On my way"))
 
@@ -159,6 +191,7 @@ class DetailViewModelTest {
     fun liveActions_listedAndRun() = runTest {
         liveActions.actionTitles = listOf("Mark as read", "Like")
         val vm = viewModel()
+        watch(vm)
 
         assertEquals(listOf("Mark as read", "Like"), vm.liveActionTitles())
         vm.runLiveAction(1)

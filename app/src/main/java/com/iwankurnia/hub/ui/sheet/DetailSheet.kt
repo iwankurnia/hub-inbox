@@ -87,15 +87,17 @@ class DetailSheetActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailSheet(itemId: Long, onDismiss: () -> Unit) {
-    val viewModel = hiltViewModel<DetailViewModel, DetailViewModel.Factory>(key = "detail-$itemId") {
-        it.create(itemId)
-    }
+    // One view model for every item; its flows follow setItem and stop soon after the sheet closes.
+    val viewModel = hiltViewModel<DetailViewModel>()
     val item by viewModel.item.collectAsStateWithLifecycle()
     val thread by viewModel.thread.collectAsStateWithLifecycle()
     val weekCount by viewModel.weekCount.collectAsStateWithLifecycle()
     val canReply by viewModel.canReply.collectAsStateWithLifecycle()
     val snoozeOptions by viewModel.snoozeOptions.collectAsStateWithLifecycle()
-    LaunchedEffect(itemId) { viewModel.onOpened() }
+    LaunchedEffect(itemId) {
+        viewModel.setItem(itemId)
+        viewModel.onOpened()
+    }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -108,7 +110,8 @@ fun DetailSheet(itemId: Long, onDismiss: () -> Unit) {
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
-        val current = item ?: return@ModalBottomSheet
+        // Until the new item loads, the flows may still hold the previously opened one.
+        val current = item?.takeIf { it.id == itemId } ?: return@ModalBottomSheet
         val packageName = current.packageName
         val appLabel = remember(packageName) { viewModel.appLabel(packageName) }
         val icon = remember(packageName) { viewModel.appIcon(packageName) }
