@@ -40,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
@@ -123,7 +125,7 @@ fun HubRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (selected) SelectedTick() else AppIcon(item.packageName, iconCache, IconSize, badge = snoozed)
+                if (selected) SelectedTick() else AppIcon(item.packageName, iconCache, IconSize, badge = snoozed, greyscale = item.isRead)
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -220,7 +222,7 @@ private fun RestoreChip(onRestore: () -> Unit) {
 
 /** The app's launcher icon in a rounded square, with an amber "z" badge when [badge] is set. */
 @Composable
-fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, badge: Boolean = false) {
+fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, badge: Boolean = false, greyscale: Boolean = false) {
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
     val icon = rememberAppIcon(packageName, iconCache, sizePx)
     val label = stringResource(R.string.cd_app_icon, iconCache.label(packageName))
@@ -233,7 +235,13 @@ fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, badge: Boole
             contentAlignment = Alignment.Center,
         ) {
             if (icon != null) {
-                Image(bitmap = icon, contentDescription = null, modifier = Modifier.size(size))
+                Image(
+                    bitmap = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(size),
+                    // A read item keeps its icon but loses its colour, like a BB10 read row.
+                    colorFilter = if (greyscale) GreyscaleFilter else null,
+                )
             } else {
                 Text(
                     text = iconCache.label(packageName).take(1).uppercase(),
@@ -270,3 +278,6 @@ fun rememberAppIcon(packageName: String, iconCache: AppIconCache, sizePx: Int): 
     }
     return icon
 }
+
+/** Drops all saturation; applied to the app icon of a read item. */
+private val GreyscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })

@@ -61,7 +61,7 @@ fun SearchResultRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppIconImage(icon = icon, label = appLabel, size = 34.dp)
+            AppIconImage(icon = icon, label = appLabel, size = 34.dp, greyscale = item.isRead)
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
