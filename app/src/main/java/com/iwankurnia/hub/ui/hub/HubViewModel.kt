@@ -12,6 +12,7 @@ import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.NotificationItem
+import com.iwankurnia.hub.snooze.SnoozeScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -46,20 +47,24 @@ data class UndoAction(
     val untilMs: Long? = null,
 )
 
-/** State and actions for the Hub list: tab, app filter, paging, selection, undo and the open sheet. */
+/**
+ * State and actions for the Hub list: tab, app filter, paging, selection, undo and the open sheet.
+ * Every mutation that can change the next snooze time ends with [rescheduleAlarm] (spec 4.6).
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HubViewModel internal constructor(
     private val repository: HubRepository,
     private val liveActions: LiveActions,
     keepDeletedDaysSource: Flow<Int>,
+    private val rescheduleAlarm: suspend () -> Unit = {},
 ) : ViewModel() {
 
     @Inject
-    constructor(repository: HubRepository, liveActions: LiveActions, prefs: HubPrefs) :
-        this(repository, liveActions, prefs.keepDeletedDays)
+    constructor(repository: HubRepository, liveActions: LiveActions, prefs: HubPrefs, scheduler: SnoozeScheduler) :
+        this(repository, liveActions, prefs.keepDeletedDays, scheduler::reschedule)
 
-    /** For tests and previews: no live notifications, the default 30-day bin. */
+    /** For tests and previews: no live notifications, the default 30-day bin, no alarm. */
     constructor(repository: HubRepository) : this(repository, NoLiveActions, flowOf(DEFAULT_KEEP_DELETED_DAYS))
 
     private val _tab = MutableStateFlow(HubTab.ALL)
@@ -117,6 +122,7 @@ class HubViewModel internal constructor(
         viewModelScope.launch {
             val item = repository.item(id) ?: return@launch
             repository.restore(listOf(id))
+            rescheduleAlarm()
             offerUndo(UndoAction(item.title, { repository.delete(listOf(id)) }, UndoKind.RESTORE))
         }
     }
@@ -125,7 +131,10 @@ class HubViewModel internal constructor(
     fun purge(id: Long) = purgeItems(listOf(id))
 
     fun emptyDeleted() {
-        viewModelScope.launch { repository.emptyDeleted() }
+        viewModelScope.launch {
+            repository.emptyDeleted()
+            rescheduleAlarm()
+        }
     }
 
     fun markAllRead() {
@@ -135,7 +144,10 @@ class HubViewModel internal constructor(
     fun undo() {
         val action = _undo.value ?: return
         _undo.value = null
-        viewModelScope.launch { action.revert() }
+        viewModelScope.launch {
+            action.revert()
+            rescheduleAlarm()
+        }
     }
 
     /** The snackbar for [action] went away without Undo: commit whatever was waiting on it. */
@@ -171,6 +183,7 @@ class HubViewModel internal constructor(
         viewModelScope.launch {
             val before = ids.mapNotNull { repository.item(it) }
             repository.snooze(ids, untilMs)
+            rescheduleAlarm()
             val wasUnread = before.filterNot { it.isRead }.map { it.id }
             offerUndo(
                 UndoAction(
@@ -204,7 +217,12 @@ class HubViewModel internal constructor(
     override fun onCleared() {
         // viewModelScope is already cancelled; a purge still waiting on Undo must not be lost.
         val ids = pendingPurge
-        if (ids.isNotEmpty()) CoroutineScope(SupervisorJob() + Dispatchers.IO).launch { repository.purge(ids.toList()) }
+        if (ids.isNotEmpty()) {
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                repository.purge(ids.toList())
+                rescheduleAlarm()
+            }
+        }
         super.onCleared()
     }
 
@@ -237,6 +255,7 @@ class HubViewModel internal constructor(
         viewModelScope.launch {
             val before = ids.mapNotNull { repository.item(it) }
             repository.delete(ids)
+            rescheduleAlarm()
             before.forEach { liveActions.cancel(it.notifKey) }
             offerUndo(
                 UndoAction(
@@ -283,7 +302,10 @@ class HubViewModel internal constructor(
         if (ids.isEmpty()) return
         pendingPurge = emptySet()
         // Purged ids never come back, so they stay hidden until the paged list catches up.
-        viewModelScope.launch { repository.purge(ids.toList()) }
+        viewModelScope.launch {
+            repository.purge(ids.toList())
+            rescheduleAlarm()
+        }
     }
 
     private companion object {

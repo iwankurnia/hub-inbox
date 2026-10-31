@@ -105,7 +105,7 @@ fun HubScreen(
 
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var snoozeDialog by remember { mutableStateOf(false) }
+    var snoozePicker by remember { mutableStateOf(false) }
     var confirmEmpty by remember { mutableStateOf(false) }
 
     LaunchedEffect(request) {
@@ -152,7 +152,7 @@ fun HubScreen(
                         canOpenInApp = selectedItems.map { it.packageName }.distinct().size == 1,
                         onClose = viewModel::clearSelection,
                         onRead = viewModel::readSelected,
-                        onSnooze = { snoozeDialog = true },
+                        onSnooze = { snoozePicker = true },
                         onDelete = viewModel::deleteSelected,
                         onSelectAll = { viewModel.selectAll(loadedItems().filterNot { it.id in hiddenIds }.map { it.id }) },
                         onOpenInApp = {
@@ -193,15 +193,14 @@ fun HubScreen(
         openItemId?.let { id -> DetailSheet(itemId = id, onDismiss = viewModel::closeSheet) }
     }
 
-    if (snoozeDialog) {
-        SnoozeChoicesDialog(
-            nowMs = System.currentTimeMillis(),
+    if (snoozePicker) {
+        SelectSnoozeSheet(
             zone = zone,
             onPick = { until ->
-                snoozeDialog = false
+                snoozePicker = false
                 viewModel.snoozeSelected(until)
             },
-            onDismiss = { snoozeDialog = false },
+            onDismiss = { snoozePicker = false },
         )
     }
     if (confirmEmpty) {
