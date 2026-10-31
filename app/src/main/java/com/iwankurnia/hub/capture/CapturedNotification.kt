@@ -1,7 +1,7 @@
 package com.iwankurnia.hub.capture
 
-/** One message from a `MessagingStyle` notification. */
-data class CapturedMessage(val sender: String?, val text: String, val timestamp: Long)
+/** One message from a `MessagingStyle` notification; [fromUser] marks the user's own messages. */
+data class CapturedMessage(val sender: String?, val text: String, val timestamp: Long, val fromUser: Boolean = false)
 
 /** What the listener read from a posted notification, ready for [com.iwankurnia.hub.data.HubRepository.capture]. */
 data class CapturedNotification(

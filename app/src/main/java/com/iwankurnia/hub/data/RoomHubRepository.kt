@@ -137,11 +137,18 @@ class RoomHubRepository(
 
     override suspend fun isAppIncluded(packageName: String): Boolean = dao.appPref(packageName)?.includeInHub ?: true
 
-    /** One item per chat message, skipping messages already stored and echoes of replies sent from Hub. */
+    /**
+     * One item per chat message, skipping messages already stored and echoes of replies sent from Hub. The
+     * user's own messages are not items: they become outgoing [SentReply] rows unless one already matches.
+     */
     private suspend fun captureMessages(c: CapturedNotification): CaptureResult {
         val ids = c.messages.mapNotNull { message ->
             val at = if (message.timestamp > 0) message.timestamp else c.postedAt
             when {
+                message.fromUser -> {
+                    if (!isEchoOfSentReply(c.conversationId, message, at)) recordUserMessage(c, message, at)
+                    null
+                }
                 dao.messageExists(c.notifKey, message.sender, message.text, message.timestamp) -> null
                 isEchoOfSentReply(c.conversationId, message, at) -> null
                 else -> dao.insert(
@@ -163,6 +170,14 @@ class RoomHubRepository(
             }
         }
         return if (ids.isEmpty()) CaptureResult.Ignored else CaptureResult.Inserted(ids)
+    }
+
+    /** Stores the user's own message, sent from the other app, as an outgoing bubble of the conversation. */
+    private suspend fun recordUserMessage(c: CapturedNotification, message: CapturedMessage, at: Long) {
+        val newest = c.conversationId?.let { dao.newestIdInConversation(c.packageName, it) }
+            ?: dao.newestForKey(c.notifKey)?.id
+            ?: 0L
+        dao.insertReply(SentReply(itemId = newest, conversationId = c.conversationId, text = message.text, sentAt = at))
     }
 
     /** A message matching a reply sent from Hub in the same conversation within the echo window. */

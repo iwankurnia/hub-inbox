@@ -31,7 +31,10 @@ object NotificationMapper {
         )
     }
 
-    /** One entry per non-blank message; the sender is null for the user's own messages and in one-to-one chats. */
+    /**
+     * One entry per non-blank message; the sender is null for the user's own messages and in one-to-one chats,
+     * and the user's own messages are flagged [CapturedMessage.fromUser].
+     */
     private fun messages(notification: Notification): List<CapturedMessage> {
         val style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification)
             ?: return emptyList()
@@ -40,8 +43,9 @@ object NotificationMapper {
             val text = message.text?.toString()
             if (text.isNullOrBlank()) return@mapNotNull null
             val person = message.person
-            val sender = if (!group || isUser(person, style.user)) null else person?.name?.toString()
-            CapturedMessage(sender = sender, text = text, timestamp = message.timestamp)
+            val fromUser = isUser(person, style.user)
+            val sender = if (!group || fromUser) null else person?.name?.toString()
+            CapturedMessage(sender = sender, text = text, timestamp = message.timestamp, fromUser = fromUser)
         }
     }
 

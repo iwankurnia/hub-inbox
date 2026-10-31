@@ -164,6 +164,12 @@ interface HubDao {
     suspend fun messageExists(notifKey: String, sender: String?, text: String, messageTimestamp: Long): Boolean
 
     @Query(
+        "SELECT id FROM items WHERE packageName = :pkg AND conversationId = :conversationId " +
+            "ORDER BY postedAt DESC, id DESC LIMIT 1",
+    )
+    suspend fun newestIdInConversation(pkg: String, conversationId: String): Long?
+
+    @Query(
         "SELECT COUNT(*) > 0 FROM sent_replies WHERE conversationId IS :conversationId AND text = :text " +
             "AND sentAt BETWEEN :fromMs AND :toMs",
     )

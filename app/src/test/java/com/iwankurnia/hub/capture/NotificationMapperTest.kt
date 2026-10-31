@@ -64,8 +64,8 @@ class NotificationMapperTest {
             listOf(
                 CapturedMessage("Anna", "Morning all", 100L),
                 CapturedMessage("Ben", "Stand-up in five", 200L),
-                CapturedMessage(null, "On my way", 300L),
-                CapturedMessage(null, "Thanks", 400L),
+                CapturedMessage(null, "On my way", 300L, fromUser = true),
+                CapturedMessage(null, "Thanks", 400L, fromUser = true),
             ),
             c.messages,
         )
@@ -84,6 +84,20 @@ class NotificationMapperTest {
         assertEquals("Anna", c.title)
         assertEquals(listOf<String?>(null, null), c.messages.map { it.sender })
         assertEquals(listOf("Are you free?", "Call me"), c.messages.map { it.text })
+    }
+
+    @Test
+    fun map_userMessage_isFlaggedFromUser() {
+        val style = NotificationCompat.MessagingStyle(me)
+            .setGroupConversation(false)
+            .addMessage("Are you free?", 100L, anna)
+            .addMessage("Yes, call me", 200L, me)
+            .addMessage("Calling now", 300L, null as Person?)
+        val notification = builder(context).setContentTitle("Anna").setStyle(style).build()
+
+        val c = NotificationMapper.map(sbn(notification), context)
+
+        assertEquals(listOf(false, true, true), c.messages.map { it.fromUser })
     }
 
     @Test

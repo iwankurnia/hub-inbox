@@ -205,6 +205,47 @@ class RoomHubRepositoryTest {
     }
 
     @Test
+    fun capture_userMessage_becomesSentReply_notItem() = runTest {
+        val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
+        val annId = ids(repo.capture(chat(listOf(incoming)))).single()
+        val mine = CapturedMessage(null, "Yes, five minutes", 20_000L, fromUser = true)
+
+        assertEquals(CaptureResult.Ignored, repo.capture(chat(listOf(incoming, mine))))
+
+        assertEquals(1, all().size)
+        val reply = db.hubDao().repliesForConversation("conv-1").first().single()
+        assertEquals(annId, reply.itemId)
+        assertEquals("Yes, five minutes", reply.text)
+        assertEquals(20_000L, reply.sentAt)
+        val thread = repo.thread(repo.item(annId)!!).first()
+        assertTrue(thread.last() is ThreadEntry.Outgoing)
+
+        // Re-capturing the same notification adds nothing.
+        repo.capture(chat(listOf(incoming, mine)))
+        assertEquals(1, all().size)
+        assertEquals(1, db.hubDao().repliesForConversation("conv-1").first().size)
+    }
+
+    @Test
+    fun capture_userMessage_matchingHubReply_isNotRecordedTwice() = runTest {
+        val annId = ids(repo.capture(chat(listOf(CapturedMessage("Ann", "Coming?", 10_000L))))).single()
+        now = 20_000L
+        repo.recordSentReply(annId, "On my way")
+
+        repo.capture(chat(listOf(CapturedMessage(null, "On my way", 50_000L, fromUser = true))))
+
+        assertEquals(1, db.hubDao().repliesForConversation("conv-1").first().size)
+    }
+
+    @Test
+    fun capture_userMessage_firstInConversation_usesItemIdZero() = runTest {
+        repo.capture(chat(listOf(CapturedMessage(null, "Hello?", 5_000L, fromUser = true))))
+
+        assertEquals(0, all().size)
+        assertEquals(0L, db.hubDao().repliesForConversation("conv-1").first().single().itemId)
+    }
+
+    @Test
     fun wakeDue_ignoresDeletedItems() = runTest {
         val id = ids(repo.capture(notif())).single()
         repo.snooze(listOf(id), untilMs = 2_000_000L)
