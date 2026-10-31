@@ -21,6 +21,10 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -107,6 +111,7 @@ fun HubScreen(
     val scope = rememberCoroutineScope()
     var snoozePicker by remember { mutableStateOf(false) }
     var confirmEmpty by remember { mutableStateOf(false) }
+    var filterOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(request) {
         val r = request ?: return@LaunchedEffect
@@ -137,6 +142,8 @@ fun HubScreen(
                 if (selection.isEmpty()) {
                     HubTopBar(
                         showOverflow = tab == HubTab.UNREAD,
+                        filterActive = packageFilter != null,
+                        onOpenFilter = { filterOpen = true },
                         onOpenSearch = onOpenSearch,
                         onOpenSettings = onOpenSettings,
                         onMarkAllRead = {
@@ -167,13 +174,13 @@ fun HubScreen(
         ) { padding ->
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
                 HubTabs(tab = tab, unreadCount = unreadCount, onSelect = viewModel::selectTab)
-                AppChips(
-                    apps = apps,
-                    selected = packageFilter,
-                    iconCache = iconCache,
-                    onSelect = viewModel::filterApp,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
+                packageFilter?.let { pkg ->
+                    ActiveFilterChip(
+                        label = remember(pkg) { iconCache.label(pkg) },
+                        onClear = { viewModel.filterApp(null) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 if (tab == HubTab.DELETED) {
                     DeletedBanner(keepDeletedDays = keepDeletedDays, onEmptyNow = { confirmEmpty = true })
@@ -203,6 +210,15 @@ fun HubScreen(
             onDismiss = { snoozePicker = false },
         )
     }
+    if (filterOpen) {
+        AppFilterSheet(
+            apps = apps,
+            selected = packageFilter,
+            iconCache = iconCache,
+            onSelect = viewModel::filterApp,
+            onDismiss = { filterOpen = false },
+        )
+    }
     if (confirmEmpty) {
         AlertDialog(
             onDismissRequest = { confirmEmpty = false },
@@ -225,6 +241,8 @@ fun HubScreen(
 @Composable
 private fun HubTopBar(
     showOverflow: Boolean,
+    filterActive: Boolean,
+    onOpenFilter: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
     onMarkAllRead: () -> Unit,
@@ -233,6 +251,7 @@ private fun HubTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .statusBarsPadding()
             .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.Bottom,
@@ -242,6 +261,11 @@ private fun HubTopBar(
             style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.weight(1f),
         )
+        IconButton(onClick = onOpenFilter) {
+            BadgedBox(badge = { if (filterActive) Badge() }) {
+                Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter))
+            }
+        }
         IconButton(onClick = onOpenSearch) {
             Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.action_search))
         }
@@ -270,7 +294,10 @@ private fun HubTopBar(
 @Composable
 private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
     val tabs = listOf(HubTab.ALL to R.string.tab_all, HubTab.UNREAD to R.string.tab_unread, HubTab.DELETED to R.string.tab_deleted)
-    PrimaryTabRow(selectedTabIndex = tabs.indexOfFirst { it.first == tab }) {
+    PrimaryTabRow(
+        selectedTabIndex = tabs.indexOfFirst { it.first == tab },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
         tabs.forEach { (value, label) ->
             Tab(
                 selected = value == tab,
@@ -343,12 +370,12 @@ private fun HubList(
                 val previous = previousVisible(items, index, hiddenIds)
                 val at = bandTime(peeked)
                 if (previous == null || !DateBands.sameBand(bandTime(previous), at, nowMs, zone)) {
-                    stickyHeader(key = "band-${peeked.id}", contentType = "band") {
+                    stickyHeader(key = "band-$tab-${peeked.id}", contentType = "band") {
                         BandHeader(DateBands.forInstant(at, nowMs, zone, todayLabel = todayLabel, yesterdayLabel = yesterdayLabel))
                     }
                 }
             }
-            item(key = peeked?.id ?: "placeholder-$index", contentType = "row") {
+            item(key = peeked?.let { "row-$tab-${it.id}" } ?: "placeholder-$index", contentType = "row") {
                 val item = items[index] ?: return@item
                 SwipeRow(
                     readEnabled = tab != HubTab.DELETED,
@@ -462,4 +489,16 @@ private fun undoMessage(context: Context, action: UndoAction, nowMs: Long, zone:
 
 private fun openApp(context: Context, packageName: String) {
     context.packageManager.getLaunchIntentForPackage(packageName)?.let(context::startActivity)
+}
+
+/** The one chip shown under the tabs while an app filter is active; × clears it. */
+@Composable
+private fun ActiveFilterChip(label: String, onClear: () -> Unit, modifier: Modifier = Modifier) {
+    InputChip(
+        selected = true,
+        onClick = onClear,
+        label = { Text(stringResource(R.string.filter_active, label)) },
+        trailingIcon = { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.action_clear)) },
+        modifier = modifier,
+    )
 }

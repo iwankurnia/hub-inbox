@@ -16,6 +16,9 @@
     <string name="tab_unread">Unread</string>
     <string name="tab_deleted">Deleted</string>
     <string name="chip_every_app">Every app</string>
+    <string name="action_filter">Filter by app</string>
+    <string name="filter_sheet_title">Show notifications from</string>
+    <string name="filter_active">Only %1$s</string>
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
     <string name="row_snoozed_until">until %1$s</string>
