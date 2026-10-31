@@ -1,0 +1,65 @@
+# SDD ledger — plan: docs/superpowers/plans/2026-11-01-hub-inbox.md
+
+Ruling: Tasks 1–2 run on `main` of a brand-new personal repo (no other work exists); tracks A–D run in git worktrees on their own branches and merge back in Task M — Iwan asked to sync the work to GitHub, so main is the integration branch — cost if wrong: a messy history that can be squashed.
+Ruling: Tracks A–D are dispatched in parallel (one implementer each, separate worktrees), overriding the skill's one-at-a-time rule — Iwan asked for parallel Opus agents; files are disjoint by plan design — cost if wrong: merge conflicts in Task M.
+
+## Pre-flight scan
+| Pair | Produces vs consumes | Found |
+|---|---|---|
+| T1 → T2/B/C/D | HubIntents.open(ctx,...), HubTheme, HubColors, Routes, stub signatures | consistent; DetailSheet(itemId,onDismiss) used by B2, C2, C3 |
+| T2 → A | CapturedNotification, CaptureResult, HubRepository.capture/markReadByKey/isAppIncluded, LiveActions interface, NoLiveActions, AppModule @Provides line | consistent; A2 edits exactly one @Provides line |
+| T2 → B | HubRepository paging/counts/mutations, AppCount, DateBands (B1) | consistent |
+| T2 → C | itemFlow/thread/snooze/wakeDue/nextSnoozeAt/search/recordSentReply, HubPrefs, LiveActions | consistent |
+| T2 → D | appCounts, WidgetRefresher binding, latestUnread append (permitted edit) | consistent; D appends to HubRepository/RoomHubRepository/HubDao |
+| B2 ↔ C2 | B renders DetailSheet(itemId,onDismiss) stub; C fills it | signature fixed in T1; B must not edit sheet files |
+| B2 ↔ C1/C2 | SelectBar snooze → SnoozePicker | B falls back to a dialog; Task M wires it |
+| A2 ↔ C2 | LiveActions.reply/actions/openContent | interface fixed in T2 |
+| Each task | tests vs code | T1 2 tests, T2 15, A1 9, A2 5, A3 2, B1 2, B2 6+3, C1 7, C2 4+2, C3 3, C4 3, D1 2, D2 2 — all named with assertions |
+No conflicts found.
+
+Task 1: implementer DONE_WITH_CONCERNS (039e03f). Observations accepted: robolectric.properties sdk=35 (Robolectric 4.15 cannot run API 37), --enable-native-access for JDK 25, lifecycle 2.11.0, extra strings for empty states/snackbars.
+Ruling: stay on material3 1.4.0 with `MaterialTheme` — `MaterialExpressiveTheme` is internal in 1.4.0 and only public in 1.5.0-beta; the Expressive look is carried by shapes, colour and motion in the tracks, and Task M may trial a bump to 1.5.0-beta02 — cost if wrong: a later theme swap touching every screen's top-level composable only.
+Task 1: minor (deferred): themes.xml transparent windowBackground may flash on dark cold start; Type.kt labelSmall bare TextStyle; strings snackbar_emptied wording; SCHEDULE_EXACT_ALARM alongside USE_EXACT_ALARM (fine for sideload).
+Task 1: complete (commits 11cf7eb..039e03f, review clean)
+Task 2: implementer DONE_WITH_CONCERNS (12da381). Noted: identical-repost check precedes update-in-place (spec-faithful); thread() = newest `limit` oldest-first; wakeDue covers DELETED items too (Track C must not notify for DELETED); CaptureResult/CapturedMessage live in `capture`, HubTab/AppCount/HubFilter/ThreadEntry in data/HubRepository.kt.
+Task 2: review Needs fixes — Important 1: echo rule narrowed to sender==null (not in brief). Minors: wakeDue/nextSnoozeAt ignore state; identical check ignores subText/hasReply; messageTimestamp 0 dedup; test gaps; IN-list size.
+Ruling: drop the sender guard as the brief says (my dispatch note "sender null or equals the user" is withdrawn) — the mapper nulling the user's name is a Track A promise this layer should not depend on — cost if wrong: a teammate's identical text within 60 s of a Hub reply is dropped (rare).
+Ruling: fix Minor 1 in this round too (ACTIVE-only wake/next-snooze, delete clears snoozedUntil) because Track C's alarm scheduling builds on it — cost if wrong: none material.
+Task 2: minor (deferred): identical-repost check ignores subText/hasReply; messageTimestamp 0 dedup needs a comment; search order/cap untested; ±60 s boundaries untested; IN-list chunking.
+Task 2: fix round 1/5 (2 addressed, 0 open — echo rule sender guard dropped; ACTIVE-only wake/next-snooze, delete clears snooze; commits 12da381..4ebec1e)
+Task 2: complete (commits 039e03f..4ebec1e, review clean). 18d7fd3 lowers daemon heaps for parallel builds.
+Tracks A–D dispatched in parallel at 18d7fd3 (worktrees .worktrees/{capture,list,sheet-search-settings,widgets}, Opus implementers). BASE for every track review = 18d7fd3.
+Track D: implementer DONE_WITH_CONCERNS (327b1ec, bdd7427; 28 tests). Noted: MarkReadAction redraw seam; latestUnread appended to data layer; 2/4/6 rows may clip on tall cells; square surfaces pre-API 31; not seen on device. Review dispatched.
+Track A: implementer DONE_WITH_CONCERNS (e649e3e, 6bf4075, 92b6100; 39 tests). Noted: LiveActionsRegistry takes @ApplicationContext; HubApp guards WorkManager.isInitialized() for Robolectric; untitled notifications use app label; stderr broadcast trace in LiveActionsRegistryTest. Review dispatched.
+Track B: implementer DONE_WITH_CONCERNS (3b5cde8, d1fdce3; 40 tests). Noted: UndoAction gained kind/count/untilMs; HubViewModel takes LiveActions+HubPrefs, swipes cancel system notification; Deleted-tab purge deferred until Undo window ends; tabs do not swipe; 3 strings added; HubScreen.kt ~440 lines. Review dispatched.
+Track D: review Needs fixes — Important 1: fixed row heights overflow the 110dp/180dp sizes (chips clipped); Important 2: hardcoded 62dp/34dp bar heights. Minors: Reply chip conditional; pill hidden at zero; double collection of cold flows; empty-state Box; appsThatFit ignores padding; id DESC untested.
+Ruling: Reply chip only when `hasReply` and header pill hidden at zero are accepted deviations from spec 4.9 — a dead Reply chip and a "0" pill are worse than their absence — cost if wrong: trivial to flip.
+Track D: minor (deferred): redraw seam on MarkReadAction redundant; cold flows collected twice + blocking iconBitmap in map; empty-state Box centring; appsThatFit ignores padding/divider; id DESC tie-break untested.
+Track D: fix round 1 implementer DONE (4a85f73: rows derived from height, shared constants, bar fillMaxHeight; sizes 110/150/230/310 → 1/2/4/6 rows). Re-review dispatched.
+Track A: review Needs fixes — Important 1: uncaught exception in scope.launch crashes the process; Important 2: unordered event processing (remove-after-post stale registry, app-cancel-before-capture loses mark-read, import racing live post). Minors: blank conversation title; null actionIntent NPE; stale registry entries after filter/exclude/disconnect; test gaps (connect import, ranking importance, ordering); combined test; stderr trace; isInitialized guard untested.
+Ruling: Minor 2 (null `actionIntent` NPE on tap) goes into fix round 1 with the two Importants because it is a user-facing crash — cost if wrong: none.
+Track A: minor (deferred): blank EXTRA_CONVERSATION_TITLE falls to app label; stale registry entries; connect-import/ranking/ordering test gaps; combined registry test; stderr broadcast trace; isInitialized guard untested on the production path.
+Track D: fix round 1/5 (2 addressed, 0 open — rows derived from height with shared constants; bar fills row; commits bdd7427..4a85f73)
+Track D: complete (commits 18d7fd3..4a85f73, review clean). Device check still owed: font scale 1.3 and launcher cell heights.
+Track B: review Needs fixes — Important 1: tabs not swipeable; Important 2: hidden purge row drops its band header; Important 3: no tests for SwipeRow and PendingRequest/onNewIntent. Minors: Deleted row time uses sortAt; no-op Undo on read rows; open() does not cancel the system notification; selection not pruned; test comment date; PendingRequests race; HubScreen.kt size; per-screen AppIconCache.
+Ruling: swipeable tabs are WAIVED — row swipes are the Hub's primary gesture and a pager steals them; tabs switch by tap (spec 4.2 "swipeable" amended) — cost if wrong: a later pager with edge-only drags.
+Ruling: Minor 1 (Deleted row time from deletedAt) and Minor 3 (open() cancels the system notification, matching swipe-read) go into fix round 1 — both one-liners that affect what Iwan sees — cost if wrong: none.
+Track B: minor (deferred): no-op Undo on already-read rows; selection not pruned when rows leave; DateBandsTest comment date wrong; PendingRequests consume race; HubScreen.kt ~447 lines; AppIconCache per screen; dynamicColor initial flash.
+Track A: fix round 1/5 (3 addressed, 0 open — crash guard + try/catch, single-consumer Channel queue, null actionIntent; commits 92b6100..d6d9a5f)
+Track A: minor (deferred): consumer catches Exception not Throwable; unlogged trySend after close; hasReply true in mapper for null-intent reply action; head-of-line blocking on a hung capture.
+Track A: complete (commits 18d7fd3..d6d9a5f, review clean)
+Track B: fix round 1/5 (4 addressed, 0 open — previousVisible band walk-back, PendingRequest + SwipeRow tests, deleted row time, open() cancels; commits d1fdce3..bfcfc1e)
+Track B: complete (commits 18d7fd3..bfcfc1e, review clean)
+Track C: implementer DONE_WITH_CONCERNS (446a13d, fa5a5b8, 9817541, 9add7f0; 49 tests). Merge-time notes: MainActivity (Track B) already handles onboarding start + extras; select-bar → SnoozePicker + reschedule still for Task M; extra small files (RunAsync, AppIconImage, TimeLabel, SearchResultRow, test fakes); 2 strings added. Review dispatched.
+Task M (partial): merged track/capture, track/widgets, track/list into main (fcc2138, 7b2de7d, 96c0945); two test fakes needed `latestUnread` (controller fix, mechanical merge resolution); main builds, 70/70 unit tests pass. Track C merge pending its review.
+Track C: review Needs fixes — Important 1: cached per-item DetailViewModel → stale snooze options and no re-mark-read on reopen. Minors: SecurityException on exact alarm + no reschedule after grant; highlightMatches/onboarding/settings untested; "No matches" flash during debounce; SettingsScreen builds its own AppIconCache + hard-coded GrantedGreen; empty sheet on null item; pre-31 alarms row no-op.
+Ruling: Minor 1's SecurityException catch goes into fix round 1 (an uncaught SecurityException would crash a snooze) — cost if wrong: none.
+Track C: minor (deferred): no reschedule after exact-alarm grant; highlightMatches/onboarding/settings tests; debounce flash; per-screen AppIconCache + GrantedGreen token; null-item sheet; pre-31 alarms row.
+Track C: fix round 1/5 (2 addressed, 0 open — onOpened() via LaunchedEffect, refreshSnoozeOptions on picker open, SecurityException fallback; commits 9add7f0..c101a63)
+Track C: complete (commits 18d7fd3..c101a63, review clean)
+Task M: all four tracks merged on main (c67955b + fake fix); main builds, 99/99 unit tests pass. Next: integration wiring (select-bar snooze → SnoozePicker, reschedule after list snooze/delete/restore), final whole-branch review, README, push, device check.
+Task M3: integration DONE_WITH_CONCERNS (4642c14; 102/102 tests). Noted for the final review: select-mode snooze does not cancel system notifications (spec 4.1 says acting in Hub does); SelectSnoozeSheet has no Compose test. README committed.
+Final review (Opus): no Critical; 7 Important (BAL options for PendingIntent on 14+, four paths skip liveActions.cancel, per-item DetailViewModel pile-up, user's own chat messages stored as incoming, appsThatFit clipping, transparent window background, pending request ignored off-HUB) + minors. Fix wave dispatched with items 1-11 in final-fix-wave.md.
+Ruling: Settings "Apps in Hub" subtitle stays "<total> in Hub · <unread> unread" instead of spec 4.8 "N today" (my Track C dispatch call; avoids a per-day DAO query) — cost if wrong: one query and a string swap.
+Final fix wave DONE_WITH_CONCERNS (586034e..c9e9003, 10 commits; 121/121 tests). Notes: appsThatFit(180)=1 with the 100 dp reserve; MODE_BACKGROUND_ACTIVITY_START_ALLOWED deprecated on API 36+ (device check); window/threading items build-checked only. Scoped re-review dispatched.
+Final fix wave re-review: all 11 addressed, no new Critical/Important. Controller verified: assembleDebug + 121/121 tests on main at c9e9003. Device checks owed: Open in app on Android 14+, own reply from the shade, widget widths, font scale 1.3, screen-change flash, tap on widget while Settings open.
