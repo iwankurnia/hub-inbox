@@ -71,14 +71,14 @@ import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.icon.AppIconCache
-import com.iwankurnia.hub.ui.sheet.DetailSheet
+import com.iwankurnia.hub.ui.launchApp
 import java.time.ZoneId
 import kotlinx.coroutines.launch
 
 /**
  * The home screen (spec 4.2, 4.4, 4.5): the "Hub" title, All / Unread / Deleted tabs, the app
- * chips and the date-banded stream with swipes, select mode and the detail sheet. A [request]
- * from a widget or notification is applied once and then reported through [onRequestConsumed].
+ * chips and the date-banded stream with swipes and select mode; tapping a row opens it in its app
+ * (spec 4.3). A [request] from a widget is applied once and then reported through [onRequestConsumed].
  */
 @Composable
 fun HubScreen(
@@ -97,7 +97,7 @@ fun HubScreen(
     val unreadCount by viewModel.unreadCount.collectAsStateWithLifecycle()
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val selection by viewModel.selection.collectAsStateWithLifecycle()
-    val openItemId by viewModel.openItemId.collectAsStateWithLifecycle()
+    val openApp by viewModel.openApp.collectAsStateWithLifecycle()
     val undo by viewModel.undo.collectAsStateWithLifecycle()
     val hiddenIds by viewModel.hiddenIds.collectAsStateWithLifecycle()
     val keepDeletedDays by viewModel.keepDeletedDays.collectAsStateWithLifecycle()
@@ -112,7 +112,6 @@ fun HubScreen(
 
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var snoozePicker by remember { mutableStateOf(false) }
     var confirmEmpty by remember { mutableStateOf(false) }
     var filterOpen by remember { mutableStateOf(false) }
 
@@ -120,15 +119,21 @@ fun HubScreen(
         val r = request ?: return@LaunchedEffect
         r.tab?.let(viewModel::selectTab)
         r.packageName?.let(viewModel::filterApp)
-        (r.itemId ?: r.replyItemId)?.let(viewModel::open)
+        r.itemId?.let(viewModel::open)
         onRequestConsumed()
         if (r.openSearch) onOpenSearch()
+    }
+
+    LaunchedEffect(openApp) {
+        val packageName = openApp ?: return@LaunchedEffect
+        launchApp(context, packageName)
+        viewModel.appOpened()
     }
 
     LaunchedEffect(undo) {
         val action = undo ?: return@LaunchedEffect
         val result = snackbar.showSnackbar(
-            message = undoMessage(context, action, nowMs, zone),
+            message = undoMessage(context, action),
             actionLabel = context.getString(R.string.action_undo),
             duration = SnackbarDuration.Short,
         )
@@ -139,80 +144,66 @@ fun HubScreen(
 
     fun loadedItems(): List<NotificationItem> = items.itemSnapshotList.items
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                if (selection.isEmpty()) {
-                    HubTopBar(
-                        showOverflow = tab == HubTab.UNREAD,
-                        filterActive = packageFilter != null,
-                        onOpenFilter = { filterOpen = true },
-                        onOpenSearch = onOpenSearch,
-                        onOpenSettings = onOpenSettings,
-                        onMarkAllRead = {
-                            viewModel.markAllRead()
-                            scope.launch { snackbar.showSnackbar(context.getString(R.string.snackbar_all_marked_read)) }
-                        },
-                    )
-                } else {
-                    val selectedItems = loadedItems().filter { it.id in selection }
-                    SelectBar(
-                        count = selection.size,
-                        showReadAndSnooze = tab != HubTab.DELETED,
-                        canOpenInApp = selectedItems.map { it.packageName }.distinct().size == 1,
-                        onClose = viewModel::clearSelection,
-                        onRead = viewModel::readSelected,
-                        onSnooze = { snoozePicker = true },
-                        onDelete = viewModel::deleteSelected,
-                        onSelectAll = { viewModel.selectAll(loadedItems().filterNot { it.id in hiddenIds }.map { it.id }) },
-                        onOpenInApp = {
-                            selectedItems.firstOrNull()?.let { openApp(context, it.packageName) }
-                            viewModel.clearSelection()
-                        },
-                    )
-                }
-            },
-            snackbarHost = { SnackbarHost(snackbar) },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        ) { padding ->
-            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-                HubTabs(tab = tab, unreadCount = unreadCount, onSelect = viewModel::selectTab)
-                packageFilter?.let { pkg ->
-                    ActiveFilterChip(
-                        label = remember(pkg) { iconCache.label(pkg) },
-                        onClear = { viewModel.filterApp(null) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    )
-                }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                if (tab == HubTab.DELETED) {
-                    DeletedBanner(keepDeletedDays = keepDeletedDays, onEmptyNow = { confirmEmpty = true })
-                }
-                HubList(
-                    items = items,
-                    tab = tab,
-                    nowMs = nowMs,
-                    zone = zone,
-                    iconCache = iconCache,
-                    selection = selection,
-                    hiddenIds = hiddenIds,
-                    viewModel = viewModel,
+    Scaffold(
+        topBar = {
+            if (selection.isEmpty()) {
+                HubTopBar(
+                    showOverflow = tab == HubTab.UNREAD,
+                    filterActive = packageFilter != null,
+                    onOpenFilter = { filterOpen = true },
+                    onOpenSearch = onOpenSearch,
+                    onOpenSettings = onOpenSettings,
+                    onMarkAllRead = {
+                        viewModel.markAllRead()
+                        scope.launch { snackbar.showSnackbar(context.getString(R.string.snackbar_all_marked_read)) }
+                    },
+                )
+            } else {
+                val selectedItems = loadedItems().filter { it.id in selection }
+                SelectBar(
+                    count = selection.size,
+                    showRead = tab != HubTab.DELETED,
+                    canOpenInApp = selectedItems.map { it.packageName }.distinct().size == 1,
+                    onClose = viewModel::clearSelection,
+                    onRead = viewModel::readSelected,
+                    onDelete = viewModel::deleteSelected,
+                    onSelectAll = { viewModel.selectAll(loadedItems().filterNot { it.id in hiddenIds }.map { it.id }) },
+                    onOpenInApp = {
+                        selectedItems.firstOrNull()?.let { launchApp(context, it.packageName) }
+                        viewModel.clearSelection()
+                    },
                 )
             }
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            HubTabs(tab = tab, unreadCount = unreadCount, onSelect = viewModel::selectTab)
+            packageFilter?.let { pkg ->
+                ActiveFilterChip(
+                    label = remember(pkg) { iconCache.label(pkg) },
+                    onClear = { viewModel.filterApp(null) },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                )
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            if (tab == HubTab.DELETED) {
+                DeletedBanner(keepDeletedDays = keepDeletedDays, onEmptyNow = { confirmEmpty = true })
+            }
+            HubList(
+                items = items,
+                tab = tab,
+                nowMs = nowMs,
+                zone = zone,
+                iconCache = iconCache,
+                selection = selection,
+                hiddenIds = hiddenIds,
+                viewModel = viewModel,
+            )
         }
-        openItemId?.let { id -> DetailSheet(itemId = id, onDismiss = viewModel::closeSheet) }
     }
 
-    if (snoozePicker) {
-        SelectSnoozeSheet(
-            zone = zone,
-            onPick = { until ->
-                snoozePicker = false
-                viewModel.snoozeSelected(until)
-            },
-            onDismiss = { snoozePicker = false },
-        )
-    }
     if (filterOpen) {
         AppFilterSheet(
             apps = apps,
@@ -465,7 +456,7 @@ private fun EmptyState(tab: HubTab) {
     }
 }
 
-private fun undoMessage(context: Context, action: UndoAction, nowMs: Long, zone: ZoneId): String {
+private fun undoMessage(context: Context, action: UndoAction): String {
     val res = context.resources
     val single = action.count == 1 && action.label.isNotEmpty()
     return when (action.kind) {
@@ -490,19 +481,7 @@ private fun undoMessage(context: Context, action: UndoAction, nowMs: Long, zone:
             res.getQuantityString(R.plurals.snackbar_n_deleted, action.count, action.count)
         }
         UndoKind.RESTORE -> res.getString(R.string.snackbar_restored, action.label)
-        UndoKind.SNOOZE -> {
-            val until = DateBands.untilTime(action.untilMs ?: nowMs, nowMs, zone)
-            if (action.count == 1) {
-                res.getString(R.string.snackbar_snoozed, until)
-            } else {
-                res.getQuantityString(R.plurals.snackbar_n_snoozed, action.count, action.count, until)
-            }
-        }
     }
-}
-
-private fun openApp(context: Context, packageName: String) {
-    context.packageManager.getLaunchIntentForPackage(packageName)?.let(context::startActivity)
 }
 
 /** The one chip shown under the tabs while an app filter is active; × clears it. */

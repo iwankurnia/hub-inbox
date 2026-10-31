@@ -3,7 +3,7 @@ package com.iwankurnia.hub
 import android.content.Context
 import android.content.Intent
 
-/** Extras and helpers for deep links into [MainActivity] from widgets, notifications and the snooze wake-up. */
+/** Extras and helpers for deep links into [MainActivity] from the widgets. */
 object HubIntents {
     /** Tab to show: "ALL", "UNREAD" or "DELETED". */
     const val EXTRA_TAB = "com.iwankurnia.hub.extra.TAB"
@@ -11,10 +11,10 @@ object HubIntents {
     /** Package name of the app to filter the stream to. */
     const val EXTRA_PACKAGE = "com.iwankurnia.hub.extra.PACKAGE"
 
-    /** Item whose detail sheet should open. */
+    /** Item to open in its app, as a tap on its row does. */
     const val EXTRA_ITEM_ID = "com.iwankurnia.hub.extra.ITEM_ID"
 
-    /** Item whose detail sheet should open with the reply box focused. */
+    /** Sent by the widget's former Reply chip; read as [EXTRA_ITEM_ID] so a widget not yet redrawn still works. */
     const val EXTRA_REPLY_ITEM_ID = "com.iwankurnia.hub.extra.REPLY_ITEM_ID"
 
     /** Boolean: open the search screen. */
@@ -26,12 +26,10 @@ object HubIntents {
         tab: String? = null,
         packageName: String? = null,
         itemId: Long? = null,
-        replyItemId: Long? = null,
     ): Intent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         tab?.let { putExtra(EXTRA_TAB, it) }
         packageName?.let { putExtra(EXTRA_PACKAGE, it) }
         itemId?.let { putExtra(EXTRA_ITEM_ID, it) }
-        replyItemId?.let { putExtra(EXTRA_REPLY_ITEM_ID, it) }
     }
 }

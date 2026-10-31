@@ -60,6 +60,7 @@ class HubListenerServiceTest {
 
     private fun chat(id: Int, pkg: String = TestNotifications.PKG) = sbn(
         builder(context).setContentTitle("Anna").setContentText("Lunch?")
+            .setContentIntent(TestNotifications.pendingIntent(context, "open"))
             .addAction(TestNotifications.replyAction(context))
             .build(),
         pkg = pkg,
@@ -82,7 +83,7 @@ class HubListenerServiceTest {
 
         assertEquals(listOf(appCancelled.key, appCancelledAll.key), repository.markedReadKeys.sorted())
         listOf(appCancelled, appCancelledAll, userSwiped, userClearedAll).forEach {
-            assertFalse("live actions kept for ${it.key}", registry.hasReply(it.key))
+            assertFalse("content intent kept for ${it.key}", registry.openContent(it.key))
         }
     }
 
@@ -95,7 +96,7 @@ class HubListenerServiceTest {
         settle()
 
         assertTrue(repository.captured.isEmpty())
-        assertFalse(registry.hasReply(muted.key))
+        assertFalse(registry.openContent(muted.key))
     }
 
     @Test
@@ -110,8 +111,8 @@ class HubListenerServiceTest {
         assertEquals(listOf(posted.key), repository.captured.map { it.notifKey })
         assertEquals("Anna", repository.captured.single().title)
         assertTrue(repository.captured.single().hasReply)
-        assertTrue(registry.hasReply(posted.key))
-        assertFalse(registry.hasReply(ongoing.key))
+        assertTrue(registry.openContent(posted.key))
+        assertFalse(registry.openContent(ongoing.key))
     }
 
     @Test
@@ -127,8 +128,8 @@ class HubListenerServiceTest {
         settle()
 
         assertEquals(listOf(good.key), repository.captured.map { it.notifKey })
-        assertFalse(registry.hasReply(bad.key))
-        assertTrue(registry.hasReply(good.key))
+        assertFalse(registry.openContent(bad.key))
+        assertTrue(registry.openContent(good.key))
     }
 
     @Test
@@ -140,7 +141,6 @@ class HubListenerServiceTest {
         settle()
 
         assertEquals(listOf("capture:${posted.key}", "markRead:${posted.key}"), repository.calls)
-        assertFalse(registry.hasReply(posted.key))
-        assertTrue(registry.actions(posted.key).isEmpty())
+        assertFalse(registry.openContent(posted.key))
     }
 }

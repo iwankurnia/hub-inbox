@@ -31,21 +31,9 @@
     <string name="empty_unread">All caught up</string>
     <string name="empty_deleted">Nothing in Deleted</string>
 
-    <!-- Detail sheet (spec 4.3) -->
-    <plurals name="sheet_count_this_week">
-        <item quantity="one">%1$d notification this week</item>
-        <item quantity="other">%1$d notifications this week</item>
-    </plurals>
-    <string name="sheet_channel">Channel: %1$s</string>
-    <string name="reply_hint">Reply…</string>
-    <string name="action_send">Send</string>
-    <string name="action_mark_read">Mark read</string>
-    <string name="action_snooze">Snooze</string>
-    <string name="action_delete">Delete</string>
-    <string name="action_open_in">Open in %1$s</string>
-    <string name="reply_failed">Couldn\'t send the reply. The notification is no longer active.</string>
-
     <!-- Gestures and select mode (spec 4.4) -->
+    <string name="action_mark_read">Mark read</string>
+    <string name="action_delete">Delete</string>
     <string name="action_read">Read</string>
     <string name="action_unread">Unread</string>
     <string name="action_undo">Undo</string>
@@ -67,11 +55,6 @@
         <item quantity="one">%1$d item deleted</item>
         <item quantity="other">%1$d items deleted</item>
     </plurals>
-    <plurals name="snackbar_n_snoozed">
-        <item quantity="one">%1$d item snoozed until %2$s</item>
-        <item quantity="other">%1$d items snoozed until %2$s</item>
-    </plurals>
-    <string name="snackbar_snoozed">Snoozed until %1$s</string>
     <string name="snackbar_all_marked_read">All marked read</string>
 
     <!-- Deleted (spec 4.5) -->
@@ -79,7 +62,6 @@
     <string name="deleted_banner_forever">Deleted items are kept until you empty them</string>
     <string name="action_empty_now">Empty now</string>
     <string name="action_restore">Restore</string>
-    <string name="action_delete_for_good">Delete for good</string>
     <string name="snackbar_restored">%1$s restored</string>
     <string name="snackbar_deleted_for_good">%1$s removed for good</string>
     <string name="snackbar_emptied">Deleted emptied</string>
@@ -88,12 +70,10 @@
     <string name="hub_action_cancel">Cancel</string>
 
     <!-- Snooze (spec 4.6) -->
-    <string name="snooze_until_header">Snooze until</string>
     <string name="snooze_in_one_hour">In 1 hour</string>
     <string name="snooze_this_afternoon">This afternoon</string>
     <string name="snooze_tomorrow">Tomorrow</string>
     <string name="snooze_monday">Monday</string>
-    <string name="snooze_pick_date_time">Pick date &amp; time…</string>
     <string name="snooze_notification_title">Snoozed: %1$s</string>
     <string name="snooze_channel_name">Snooze wake-ups</string>
     <string name="snooze_channel_description">Tells you when a snoozed notification is back</string>
@@ -149,7 +129,6 @@
     <string name="widget_hub_list_description">Your newest unread notifications</string>
     <string name="widget_app_count_label">Hub app counts</string>
     <string name="widget_app_count_description">Unread count for each app</string>
-    <string name="widget_action_reply">Reply</string>
     <string name="widget_action_read">Read</string>
     <string name="widget_open_hub">Open Hub</string>
     <string name="widget_empty">No unread notifications</string>

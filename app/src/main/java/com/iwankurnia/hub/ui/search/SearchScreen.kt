@@ -31,23 +31,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iwankurnia.hub.R
-import com.iwankurnia.hub.ui.sheet.AppIconImage
-import com.iwankurnia.hub.ui.sheet.DetailSheet
+import com.iwankurnia.hub.ui.launchApp
 
-/** Full-screen search (spec 4.7): search bar, app chips, recent searches or highlighted results. */
+/** Full-screen search (spec 4.7): search bar, app chips, recent searches or highlighted results; a tap opens the app. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(onBack: () -> Unit, viewModel: SearchViewModel = hiltViewModel()) {
@@ -56,9 +53,15 @@ fun SearchScreen(onBack: () -> Unit, viewModel: SearchViewModel = hiltViewModel(
     val recents by viewModel.recents.collectAsStateWithLifecycle()
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val packageFilter by viewModel.packageFilter.collectAsStateWithLifecycle()
-    var openItemId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val openApp by viewModel.openApp.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    LaunchedEffect(openApp) {
+        val packageName = openApp ?: return@LaunchedEffect
+        launchApp(context, packageName)
+        viewModel.appOpened()
+    }
 
     Column(
         modifier = Modifier
@@ -160,15 +163,13 @@ fun SearchScreen(onBack: () -> Unit, viewModel: SearchViewModel = hiltViewModel(
                         appLabel = label,
                         icon = icon,
                         nowMs = now,
-                        onClick = { openItemId = item.id },
+                        onClick = { viewModel.open(item.id) },
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
     }
-
-    openItemId?.let { id -> DetailSheet(itemId = id, onDismiss = { openItemId = null }) }
 }
 
 @Composable

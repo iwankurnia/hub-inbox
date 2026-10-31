@@ -251,16 +251,6 @@ private fun ItemRow(row: ListRow, showActions: Boolean) {
             )
             if (showActions) {
                 Row(modifier = GlanceModifier.padding(top = 4.dp)) {
-                    // Reply is only offered when the source notification carries a reply action.
-                    if (item.hasReply) {
-                        Chip(
-                            label = context.getString(R.string.widget_action_reply),
-                            modifier = GlanceModifier.clickable(
-                                actionStartActivity(HubIntents.open(context, replyItemId = item.id)),
-                            ),
-                        )
-                        Spacer(modifier = GlanceModifier.width(6.dp))
-                    }
                     Chip(
                         label = context.getString(R.string.widget_action_read),
                         modifier = GlanceModifier.clickable(

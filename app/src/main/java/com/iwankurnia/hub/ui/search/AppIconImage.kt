@@ -1,4 +1,4 @@
-package com.iwankurnia.hub.ui.sheet
+package com.iwankurnia.hub.ui.search
 
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.Image

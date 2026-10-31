@@ -9,6 +9,7 @@ import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.icon.AppIconCache
 import com.iwankurnia.hub.testing.InMemoryHubRepository
 import com.iwankurnia.hub.testing.InMemoryHubRepository.Companion.item
+import com.iwankurnia.hub.testing.RecordingLiveActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -40,6 +42,7 @@ class SearchViewModelTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val repository = InMemoryHubRepository()
+    private val live = RecordingLiveActions()
     private lateinit var prefs: HubPrefs
     private lateinit var vm: SearchViewModel
 
@@ -52,7 +55,7 @@ class SearchViewModelTest {
             item(2, title = "Bitbucket", text = "PR 1616 approved", packageName = "com.google.android.gm", postedAt = 2),
             item(3, title = "Shopee", text = "Your parcel is on its way", packageName = "com.shopee", postedAt = 1),
         )
-        vm = SearchViewModel(repository, prefs, AppIconCache(context))
+        vm = SearchViewModel(repository, prefs, AppIconCache(context), live)
     }
 
     @After
@@ -99,5 +102,28 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf("parcel"), prefs.recentSearches.first { it.isNotEmpty() })
+    }
+
+    @Test
+    fun open_marksReadCancelsAndOpensContent() = runTest {
+        vm.open(2)
+        advanceUntilIdle()
+
+        assertTrue(repository.items.value.single { it.id == 2L }.isRead)
+        assertEquals(listOf("cancel:key-2", "open:key-2"), live.calls)
+        assertNull(vm.openApp.value)
+    }
+
+    @Test
+    fun open_fallsBackToLaunchIntentWhenNoContentIntent() = runTest {
+        live.opens = false
+
+        vm.open(3)
+        advanceUntilIdle()
+
+        assertTrue(repository.items.value.single { it.id == 3L }.isRead)
+        assertEquals("com.shopee", vm.openApp.value)
+        vm.appOpened()
+        assertNull(vm.openApp.value)
     }
 }

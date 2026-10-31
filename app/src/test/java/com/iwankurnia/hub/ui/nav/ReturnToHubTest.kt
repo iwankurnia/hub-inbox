@@ -42,7 +42,7 @@ class ReturnToHubTest {
         compose.runOnIdle { navController.navigate(Routes.SEARCH) }
         compose.onNodeWithText("Search screen").assertExists()
 
-        request = PendingRequest(tab = null, packageName = null, itemId = 7L, replyItemId = null, openSearch = false)
+        request = PendingRequest(tab = null, packageName = null, itemId = 7L, openSearch = false)
 
         compose.onNodeWithText("Hub screen").assertExists()
         compose.runOnIdle { assertEquals(Routes.HUB, navController.currentDestination?.route) }
@@ -56,7 +56,7 @@ class ReturnToHubTest {
             navController.navigate(Routes.SETTINGS)
         }
 
-        request = PendingRequest(tab = null, packageName = "com.whatsapp", itemId = null, replyItemId = null, openSearch = false)
+        request = PendingRequest(tab = null, packageName = "com.whatsapp", itemId = null, openSearch = false)
 
         compose.onNodeWithText("Hub screen").assertExists()
         compose.runOnIdle { assertEquals(null, navController.previousBackStackEntry) }

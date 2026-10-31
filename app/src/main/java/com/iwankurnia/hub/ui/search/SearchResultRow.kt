@@ -26,8 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.iwankurnia.hub.data.NotificationItem
-import com.iwankurnia.hub.ui.sheet.AppIconImage
-import com.iwankurnia.hub.ui.sheet.timeLabel
 
 /** One search hit, in the list row's anatomy: unread bar, icon, title and time, highlighted preview. */
 @Composable

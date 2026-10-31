@@ -3,14 +3,12 @@ package com.iwankurnia.hub.capture
 import android.app.ActivityOptions
 import android.app.Application
 import android.app.PendingIntent
-import android.app.RemoteInput
 import android.os.Bundle
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Looper
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -44,86 +42,59 @@ class LiveActionsRegistryTest {
     }
 
     @Test
-    fun reply_withoutRemoteInput_returnsFalse() {
-        val plain = sbn(
-            builder(context).setContentTitle("Anna")
-                .addAction(TestNotifications.plainAction(context, "Mark as read"))
-                .build(),
-        )
-        registry.register(plain)
-
-        assertFalse(registry.hasReply(plain.key))
-        assertFalse(registry.reply(plain.key, "On my way"))
-        assertFalse(registry.reply("unknown|key", "On my way"))
-    }
-
-    @Test
-    fun actions_listsNonReplyActions() {
-        val chat = sbn(
-            builder(context).setContentTitle("Anna")
-                .setContentIntent(TestNotifications.pendingIntent(context, "open"))
-                .addAction(TestNotifications.replyAction(context))
-                .addAction(TestNotifications.plainAction(context, "Mark as read"))
-                .addAction(TestNotifications.plainAction(context, "Mute"))
-                .build(),
-        )
+    fun openContent_firesContentIntent_untilUnregistered() {
+        val chat = sbn(builder(context).setContentTitle("Anna").setContentIntent(TestNotifications.pendingIntent(context, "open")).build())
         registry.register(chat)
-        listenFor("reply", "open", "Mark as read")
+        listenFor("open")
 
-        val actions = registry.actions(chat.key)
-
-        assertEquals(listOf("Mark as read", "Mute"), actions.map { it.title })
-        assertTrue(actions.first().send())
-        assertTrue(registry.hasReply(chat.key))
-        assertTrue(registry.reply(chat.key, "On my way"))
         assertTrue(registry.openContent(chat.key))
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(listOf("Mark as read", "reply", "open"), received.map { it.action })
-        val replied = RemoteInput.getResultsFromIntent(received[1])
-        assertEquals("On my way", replied?.getCharSequence("reply_text")?.toString())
+        assertEquals(listOf("open"), received.map { it.action })
 
         registry.unregister(chat.key)
-        assertTrue(registry.actions(chat.key).isEmpty())
         assertFalse(registry.openContent(chat.key))
     }
 
     @Test
-    fun actions_withoutIntent_areSkipped() {
-        val noIntent = NotificationCompat.Action.Builder(0, "Broken", null).build()
-        val noIntentReply = NotificationCompat.Action.Builder(0, "Reply", null)
-            .addRemoteInput(androidx.core.app.RemoteInput.Builder("reply_text").setLabel("Reply").build())
-            .build()
-        val chat = sbn(
-            builder(context).setContentTitle("Anna")
-                .addAction(noIntent)
-                .addAction(noIntentReply)
-                .addAction(TestNotifications.plainAction(context, "Mute"))
-                .build(),
-        )
-        registry.register(chat)
+    fun openContent_withoutContentIntent_returnsFalse() {
+        val plain = sbn(builder(context).setContentTitle("Anna").build())
+        registry.register(plain)
 
-        assertEquals(listOf("Mute"), registry.actions(chat.key).map { it.title })
-        assertFalse(registry.hasReply(chat.key))
-        assertFalse(registry.reply(chat.key, "On my way"))
+        assertFalse(registry.openContent(plain.key))
+        assertFalse(registry.openContent("unknown|key"))
+    }
+
+    @Test
+    fun register_repostWithoutContentIntent_dropsTheOldOne() {
+        val withIntent = sbn(builder(context).setContentTitle("Anna").setContentIntent(TestNotifications.pendingIntent(context, "open")).build())
+        val without = sbn(builder(context).setContentTitle("Anna").build())
+        registry.register(withIntent)
+
+        registry.register(without)
+
+        assertFalse(registry.openContent(withIntent.key))
+    }
+
+    @Test
+    fun cancel_usesTheListenersCanceller() {
+        val cancelled = mutableListOf<String>()
+        registry.cancel("before|connect")
+        registry.canceller = { cancelled += it }
+
+        registry.cancel("k1")
+
+        assertEquals(listOf("k1"), cancelled)
     }
 
     @Test
     @Config(sdk = [35])
     fun openContent_onApi34_passesBackgroundActivityStartOptions() {
         val open = activityIntent("open")
-        val chat = sbn(
-            builder(context).setContentTitle("Anna")
-                .setContentIntent(open)
-                .addAction(androidx.core.app.NotificationCompat.Action.Builder(0, "View", activityIntent("view")).build())
-                .build(),
-        )
+        val chat = sbn(builder(context).setContentTitle("Anna").setContentIntent(open).build())
         registry.register(chat)
         val started = shadowOf(context as Application)
 
         assertTrue(registry.openContent(chat.key))
-        assertAllowsBackgroundStart(started.nextStartedActivityForResult.options)
-
-        assertTrue(registry.actions(chat.key).single().send())
         assertAllowsBackgroundStart(started.nextStartedActivityForResult.options)
     }
 

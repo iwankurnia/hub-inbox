@@ -13,6 +13,7 @@ import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.snooze.SnoozeScheduler
+import com.iwankurnia.hub.ui.openItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -33,22 +34,21 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** What the snackbar reports; the screen turns it into text. */
-enum class UndoKind { READ, UNREAD, DELETE, PURGE, RESTORE, SNOOZE }
+enum class UndoKind { READ, UNREAD, DELETE, PURGE, RESTORE }
 
 /**
  * A reversible action offered in the snackbar. [label] is the item's title when one item was
- * affected, else empty; [count] is how many items; [untilMs] is the snooze time for [UndoKind.SNOOZE].
+ * affected, else empty; [count] is how many items.
  */
 data class UndoAction(
     val label: String,
     val revert: suspend () -> Unit,
     val kind: UndoKind = UndoKind.READ,
     val count: Int = 1,
-    val untilMs: Long? = null,
 )
 
 /**
- * State and actions for the Hub list: tab, app filter, paging, selection, undo and the open sheet.
+ * State and actions for the Hub list: tab, app filter, paging, selection, undo and opening an item.
  * Every mutation that can change the next snooze time ends with [rescheduleAlarm] (spec 4.6).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -92,8 +92,10 @@ class HubViewModel internal constructor(
     private val _selection = MutableStateFlow<Set<Long>>(emptySet())
     val selection: StateFlow<Set<Long>> = _selection.asStateFlow()
 
-    private val _openItemId = MutableStateFlow<Long?>(null)
-    val openItemId: StateFlow<Long?> = _openItemId.asStateFlow()
+    private val _openApp = MutableStateFlow<String?>(null)
+
+    /** One-shot: the package whose launcher activity the screen should start; cleared by [appOpened]. */
+    val openApp: StateFlow<String?> = _openApp.asStateFlow()
 
     private val _undo = MutableStateFlow<UndoAction?>(null)
     val undo: StateFlow<UndoAction?> = _undo.asStateFlow()
@@ -189,43 +191,19 @@ class HubViewModel internal constructor(
         if (_tab.value == HubTab.DELETED) purgeItems(ids) else deleteItems(ids)
     }
 
-    fun snoozeSelected(untilMs: Long) {
-        val ids = takeSelection()
-        if (ids.isEmpty()) return
-        viewModelScope.launch {
-            val before = ids.mapNotNull { repository.item(it) }
-            val keys = repository.notifKeys(ids)
-            repository.snooze(ids, untilMs)
-            rescheduleAlarm()
-            keys.forEach(liveActions::cancel)
-            val wasUnread = before.filterNot { it.isRead }.map { it.id }
-            offerUndo(
-                UndoAction(
-                    label = before.singleOrNull()?.title.orEmpty(),
-                    revert = {
-                        repository.unsnooze(ids)
-                        if (wasUnread.isNotEmpty()) repository.markUnread(wasUnread)
-                    },
-                    kind = UndoKind.SNOOZE,
-                    count = ids.size,
-                    untilMs = untilMs,
-                ),
-            )
-        }
-    }
-
-    /** Opens the detail sheet for [id], marks it read and dismisses its system notification. */
+    /**
+     * Marks [id] read, clears its system notification and opens it in its app: the notification's content
+     * intent while it is still in the shade, else the app's launcher activity through [openApp].
+     */
     fun open(id: Long) {
-        _openItemId.value = id
         viewModelScope.launch {
-            val item = repository.item(id)
-            repository.markRead(listOf(id))
-            item?.let { liveActions.cancel(it.notifKey) }
+            openItem(repository, liveActions, id)?.let { _openApp.value = it }
         }
     }
 
-    fun closeSheet() {
-        _openItemId.value = null
+    /** The screen has started the app [openApp] asked for. */
+    fun appOpened() {
+        _openApp.value = null
     }
 
     override fun onCleared() {

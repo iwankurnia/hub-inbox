@@ -1,10 +1,10 @@
 package com.iwankurnia.hub.ui.hub
 
-import com.iwankurnia.hub.capture.LiveActions
 import com.iwankurnia.hub.capture.NoLiveActions
 import com.iwankurnia.hub.data.HubFilter
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.ItemState
+import com.iwankurnia.hub.testing.RecordingLiveActions
 import com.iwankurnia.hub.ui.hub.FakeHubRepository.Companion.item
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -105,18 +105,31 @@ class HubViewModelTest {
     }
 
     @Test
-    fun open_marksReadAndSetsOpenItem() = runTest(dispatcher) {
-        val live = RecordingLiveActions()
+    fun open_marksReadCancelsAndOpensContent() = runTest(dispatcher) {
+        val live = RecordingLiveActions(opens = true)
         vm = HubViewModel(repo, live, flowOf(30))
 
         vm.open(1)
-        assertTrue(repo.get(1).isRead)
-        assertEquals(1L, vm.openItemId.value)
-        // Acting in Hub dismisses the system notification.
-        assertEquals(listOf("k1"), live.cancelled)
 
-        vm.closeSheet()
-        assertNull(vm.openItemId.value)
+        assertTrue(repo.get(1).isRead)
+        assertEquals(listOf("cancel:k1", "open:k1"), live.calls)
+        // The content intent opened the app, so there is nothing to fall back to.
+        assertNull(vm.openApp.value)
+    }
+
+    @Test
+    fun open_fallsBackToLaunchIntentWhenNoContentIntent() = runTest(dispatcher) {
+        val live = RecordingLiveActions(opens = false)
+        vm = HubViewModel(repo, live, flowOf(30))
+
+        vm.open(3)
+
+        assertTrue(repo.get(3).isRead)
+        assertEquals(listOf("cancel:k3", "open:k3"), live.calls)
+        assertEquals("com.google.android.gm", vm.openApp.value)
+
+        vm.appOpened()
+        assertNull(vm.openApp.value)
     }
 
     @Test
@@ -177,18 +190,6 @@ class HubViewModelTest {
     }
 
     @Test
-    fun snoozeSelected_cancelsNotifications() = runTest(dispatcher) {
-        val live = RecordingLiveActions()
-        vm = HubViewModel(repo, live, flowOf(30))
-        vm.toggleSelect(1)
-        vm.toggleSelect(3)
-
-        vm.snoozeSelected(50_000L)
-
-        assertEquals(listOf("k1", "k3"), live.cancelled.sorted())
-    }
-
-    @Test
     fun markAllRead_cancelsNotifications() = runTest(dispatcher) {
         val live = RecordingLiveActions()
         vm = HubViewModel(repo, live, flowOf(30))
@@ -201,14 +202,6 @@ class HubViewModelTest {
         vm.filterApp(null)
         vm.markAllRead()
         assertEquals(listOf("k1", "k3"), live.cancelled)
-    }
-
-    @Test
-    fun snoozeSelected_reschedulesAlarm() = runTest(dispatcher) {
-        val alarms = withRecordedReschedules()
-        vm.toggleSelect(1)
-        vm.snoozeSelected(50_000L)
-        assertEquals(1, alarms.count)
     }
 
     @Test
@@ -266,14 +259,3 @@ class HubViewModelTest {
     }
 }
 
-/** Records which notification keys were cancelled. */
-private class RecordingLiveActions : LiveActions {
-    val cancelled = mutableListOf<String>()
-    override fun hasReply(notifKey: String): Boolean = false
-    override fun reply(notifKey: String, text: String): Boolean = false
-    override fun actions(notifKey: String): List<LiveActions.Action> = emptyList()
-    override fun openContent(notifKey: String): Boolean = false
-    override fun cancel(notifKey: String) {
-        cancelled += notifKey
-    }
-}

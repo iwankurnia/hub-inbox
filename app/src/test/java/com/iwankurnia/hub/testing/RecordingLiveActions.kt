@@ -2,34 +2,22 @@ package com.iwankurnia.hub.testing
 
 import com.iwankurnia.hub.capture.LiveActions
 
-/** [LiveActions] whose answers are set by the test and whose calls are recorded. */
-class RecordingLiveActions(
-    var replyable: Boolean = true,
-    var replySucceeds: Boolean = true,
-    var actionTitles: List<String> = emptyList(),
-    var opens: Boolean = true,
-) : LiveActions {
-    val replies = mutableListOf<Pair<String, String>>()
+/** [LiveActions] whose answer to [openContent] is set by the test and whose calls are recorded in order. */
+class RecordingLiveActions(var opens: Boolean = true) : LiveActions {
     val cancelled = mutableListOf<String>()
     val opened = mutableListOf<String>()
-    val fired = mutableListOf<String>()
 
-    override fun hasReply(notifKey: String): Boolean = replyable
-
-    override fun reply(notifKey: String, text: String): Boolean {
-        replies += notifKey to text
-        return replySucceeds
-    }
-
-    override fun actions(notifKey: String): List<LiveActions.Action> =
-        actionTitles.map { title -> LiveActions.Action(title) { fired += title; true } }
+    /** Every call as "cancel:key" or "open:key", in the order made. */
+    val calls = mutableListOf<String>()
 
     override fun openContent(notifKey: String): Boolean {
         opened += notifKey
+        calls += "open:$notifKey"
         return opens
     }
 
     override fun cancel(notifKey: String) {
         cancelled += notifKey
+        calls += "cancel:$notifKey"
     }
 }

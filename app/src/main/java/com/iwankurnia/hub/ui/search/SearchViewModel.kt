@@ -3,11 +3,13 @@ package com.iwankurnia.hub.ui.search
 import android.graphics.drawable.Drawable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iwankurnia.hub.capture.LiveActions
 import com.iwankurnia.hub.data.AppCount
 import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.data.HubRepository
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.icon.AppIconCache
+import com.iwankurnia.hub.ui.openItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -32,6 +34,7 @@ class SearchViewModel @Inject constructor(
     private val repository: HubRepository,
     private val prefs: HubPrefs,
     private val iconCache: AppIconCache,
+    private val liveActions: LiveActions,
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -42,6 +45,11 @@ class SearchViewModel @Inject constructor(
 
     val recents: StateFlow<List<String>> = prefs.recentSearches
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _openApp = MutableStateFlow<String?>(null)
+
+    /** One-shot: the package whose launcher activity the screen should start; cleared by [appOpened]. */
+    val openApp: StateFlow<String?> = _openApp.asStateFlow()
 
     val apps: StateFlow<List<AppCount>> = repository.appCounts()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -70,6 +78,18 @@ class SearchViewModel @Inject constructor(
 
     fun filterApp(packageName: String?) {
         _packageFilter.value = packageName
+    }
+
+    /** Opens a result the way a tap in the list does (spec 4.3): read, notification cleared, app opened. */
+    fun open(id: Long) {
+        viewModelScope.launch {
+            openItem(repository, liveActions, id)?.let { _openApp.value = it }
+        }
+    }
+
+    /** The screen has started the app [openApp] asked for. */
+    fun appOpened() {
+        _openApp.value = null
     }
 
     fun appLabel(packageName: String): String = iconCache.label(packageName)

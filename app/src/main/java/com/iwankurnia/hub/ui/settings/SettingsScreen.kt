@@ -63,7 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.AppCount
 import com.iwankurnia.hub.icon.AppIconCache
-import com.iwankurnia.hub.ui.sheet.AppIconImage
+import com.iwankurnia.hub.ui.search.AppIconImage
 
 private const val APPS_SHOWN = 5
 

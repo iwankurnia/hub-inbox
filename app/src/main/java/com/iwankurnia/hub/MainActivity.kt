@@ -27,7 +27,6 @@ data class PendingRequest(
     val tab: HubTab?,
     val packageName: String?,
     val itemId: Long?,
-    val replyItemId: Long?,
     val openSearch: Boolean,
 ) {
     companion object {
@@ -37,11 +36,12 @@ data class PendingRequest(
             val request = PendingRequest(
                 tab = intent.getStringExtra(HubIntents.EXTRA_TAB)?.let { name -> HubTab.entries.firstOrNull { it.name == name } },
                 packageName = intent.getStringExtra(HubIntents.EXTRA_PACKAGE),
-                itemId = intent.longExtraOrNull(HubIntents.EXTRA_ITEM_ID),
-                replyItemId = intent.longExtraOrNull(HubIntents.EXTRA_REPLY_ITEM_ID),
+                // A widget drawn before Reply was removed may still send the reply extra: it opens the item too.
+                itemId = intent.longExtraOrNull(HubIntents.EXTRA_ITEM_ID)
+                    ?: intent.longExtraOrNull(HubIntents.EXTRA_REPLY_ITEM_ID),
                 openSearch = intent.getBooleanExtra(HubIntents.EXTRA_OPEN_SEARCH, false),
             )
-            return request.takeIf { it != PendingRequest(null, null, null, null, false) }
+            return request.takeIf { it != PendingRequest(null, null, null, false) }
         }
 
         private fun Intent.longExtraOrNull(name: String): Long? =
