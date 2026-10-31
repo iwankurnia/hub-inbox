@@ -157,4 +157,8 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
             snoozedUntil = snoozedUntil,
         )
     }
+
+    override suspend fun latestUnread(limit: Int): List<NotificationItem> =
+        items.value.filter { it.state == ItemState.ACTIVE && !it.isRead && it.snoozedUntil == null }
+            .sortedByDescending { it.sortAt }.take(limit)
 }
