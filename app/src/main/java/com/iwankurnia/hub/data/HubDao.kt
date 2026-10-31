@@ -175,6 +175,10 @@ interface HubDao {
     )
     suspend fun sentReplyExists(conversationId: String?, text: String, fromMs: Long, toMs: Long): Boolean
 
+    /** Text of the most recent reply recorded in a conversation, or null when there is none. */
+    @Query("SELECT text FROM sent_replies WHERE conversationId IS :conversationId ORDER BY sentAt DESC, id DESC LIMIT 1")
+    suspend fun newestReplyText(conversationId: String?): String?
+
     @Insert
     suspend fun insertReply(reply: SentReply): Long
 

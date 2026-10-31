@@ -174,6 +174,10 @@ class RoomHubRepository(
 
     /** Stores the user's own message, sent from the other app, as an outgoing bubble of the conversation. */
     private suspend fun recordUserMessage(c: CapturedNotification, message: CapturedMessage, at: Long) {
+        // A re-delivered notification carries the user's last message again; Android's redaction even
+        // gives it a fresh timestamp each time, which defeats the echo window. The same text as the
+        // newest recorded reply in this conversation is that message again, not a new one.
+        if (dao.newestReplyText(c.conversationId) == message.text) return
         val newest = c.conversationId?.let { dao.newestIdInConversation(c.packageName, it) }
             ?: dao.newestForKey(c.notifKey)?.id
             ?: 0L

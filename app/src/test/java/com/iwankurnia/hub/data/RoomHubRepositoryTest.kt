@@ -227,6 +227,24 @@ class RoomHubRepositoryTest {
     }
 
     @Test
+    fun capture_userMessage_redeliveredWithNewTimestamp_isNotRecordedAgain() = runTest {
+        val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
+        repo.capture(chat(listOf(incoming)))
+        val mine = CapturedMessage(null, "Yes, five minutes", 20_000L, fromUser = true)
+        repo.capture(chat(listOf(incoming, mine)))
+
+        // Android's redaction re-stamps the same message well outside the echo window on every delivery.
+        repo.capture(chat(listOf(incoming, mine.copy(timestamp = 20_000L + 10 * 60_000L))))
+        repo.capture(chat(listOf(incoming, mine.copy(timestamp = 20_000L + 3 * 60 * 60_000L))))
+
+        assertEquals(1, db.hubDao().repliesForConversation("conv-1").first().size)
+
+        // A genuinely new message with different text is still recorded.
+        repo.capture(chat(listOf(incoming, mine, CapturedMessage(null, "On my way", 90_000L, fromUser = true))))
+        assertEquals(2, db.hubDao().repliesForConversation("conv-1").first().size)
+    }
+
+    @Test
     fun capture_userMessage_matchingHubReply_isNotRecordedTwice() = runTest {
         val annId = ids(repo.capture(chat(listOf(CapturedMessage("Ann", "Coming?", 10_000L))))).single()
         now = 20_000L
