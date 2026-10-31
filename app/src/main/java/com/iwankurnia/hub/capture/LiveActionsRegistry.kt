@@ -1,10 +1,12 @@
 package com.iwankurnia.hub.capture
 
+import android.app.ActivityOptions
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.service.notification.StatusBarNotification
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -58,29 +60,42 @@ class LiveActionsRegistry @Inject constructor(
         val results = Bundle().apply { putCharSequence(input.resultKey, text) }
         RemoteInput.addResultsToIntent(action.remoteInputs, intent, results)
         val pendingIntent = action.actionIntent ?: return false
-        return send { pendingIntent.send(context, 0, intent) }
+        return send(pendingIntent, intent)
     }
 
     override fun actions(notifKey: String): List<LiveActions.Action> =
         live[notifKey]?.actions.orEmpty().mapNotNull { action ->
             val pendingIntent = action.actionIntent ?: return@mapNotNull null
-            LiveActions.Action(title = action.title?.toString().orEmpty(), send = { send { pendingIntent.send() } })
+            LiveActions.Action(title = action.title?.toString().orEmpty(), send = { send(pendingIntent) })
         }
 
     override fun openContent(notifKey: String): Boolean {
         val content = live[notifKey]?.content ?: return false
-        return send { content.send() }
+        return send(content)
     }
 
     override fun cancel(notifKey: String) {
         canceller?.invoke(notifKey)
     }
 
-    /** False when the app has since cancelled the intent. */
-    private inline fun send(block: () -> Unit): Boolean = try {
-        block()
+    /**
+     * Sends [pendingIntent], filling in [fillIn] when given. On Android 14+ a `PendingIntent` sent from the
+     * foreground may only start the posting app's activity when the sender opts in, so the options allow it.
+     * False when the app has since cancelled the intent.
+     */
+    private fun send(pendingIntent: PendingIntent, fillIn: Intent? = null): Boolean = try {
+        pendingIntent.send(context, 0, fillIn, null, null, null, sendOptions())
         true
     } catch (_: PendingIntent.CanceledException) {
         false
     }
+
+    private fun sendOptions(): Bundle? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic()
+                .setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                .toBundle()
+        } else {
+            null
+        }
 }

@@ -1,6 +1,10 @@
 package com.iwankurnia.hub.capture
 
+import android.app.ActivityOptions
+import android.app.Application
+import android.app.PendingIntent
 import android.app.RemoteInput
+import android.os.Bundle
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -14,10 +18,12 @@ import com.iwankurnia.hub.capture.TestNotifications.builder
 import com.iwankurnia.hub.capture.TestNotifications.sbn
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class LiveActionsRegistryTest {
@@ -99,5 +105,47 @@ class LiveActionsRegistryTest {
         assertEquals(listOf("Mute"), registry.actions(chat.key).map { it.title })
         assertFalse(registry.hasReply(chat.key))
         assertFalse(registry.reply(chat.key, "On my way"))
+    }
+
+    @Test
+    @Config(sdk = [35])
+    fun openContent_onApi34_passesBackgroundActivityStartOptions() {
+        val open = activityIntent("open")
+        val chat = sbn(
+            builder(context).setContentTitle("Anna")
+                .setContentIntent(open)
+                .addAction(androidx.core.app.NotificationCompat.Action.Builder(0, "View", activityIntent("view")).build())
+                .build(),
+        )
+        registry.register(chat)
+        val started = shadowOf(context as Application)
+
+        assertTrue(registry.openContent(chat.key))
+        assertAllowsBackgroundStart(started.nextStartedActivityForResult.options)
+
+        assertTrue(registry.actions(chat.key).single().send())
+        assertAllowsBackgroundStart(started.nextStartedActivityForResult.options)
+    }
+
+    private fun activityIntent(action: String): PendingIntent = PendingIntent.getActivity(
+        context,
+        action.hashCode(),
+        Intent(action).setClassName(context, "com.iwankurnia.hub.MainActivity"),
+        PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    /** The send options carry every key that the background-start mode adds to a basic options bundle. */
+    private fun assertAllowsBackgroundStart(options: Bundle?) {
+        assertNotNull("send options", options)
+        val basic = ActivityOptions.makeBasic().toBundle()
+        val allowed = ActivityOptions.makeBasic()
+            .setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+            .toBundle()
+        val modeKeys = allowed.keySet() - basic.keySet()
+        assertTrue("the mode adds a key", modeKeys.isNotEmpty())
+        modeKeys.forEach { key ->
+            @Suppress("DEPRECATION")
+            assertEquals(key, allowed.get(key), options!!.get(key))
+        }
     }
 }
