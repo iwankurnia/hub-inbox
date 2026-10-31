@@ -220,4 +220,6 @@ class RoomHubRepository(
             return (incoming + outgoing).sortedBy { it.second }.map { it.first }
         }
     }
+
+    override suspend fun latestUnread(limit: Int): List<NotificationItem> = dao.latestUnread(limit)
 }

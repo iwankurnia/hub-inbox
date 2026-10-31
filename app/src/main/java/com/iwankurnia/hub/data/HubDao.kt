@@ -179,4 +179,12 @@ interface HubDao {
 
     @Query("UPDATE app_prefs SET includeInHub = :included WHERE packageName = :pkg")
     suspend fun setAppIncluded(pkg: String, included: Boolean)
+
+    // Widgets
+
+    @Query(
+        "SELECT * FROM items WHERE state = 'ACTIVE' AND isRead = 0 AND snoozedUntil IS NULL " +
+            "ORDER BY sortAt DESC, id DESC LIMIT :limit",
+    )
+    suspend fun latestUnread(limit: Int): List<NotificationItem>
 }

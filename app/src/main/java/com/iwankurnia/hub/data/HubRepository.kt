@@ -66,4 +66,7 @@ interface HubRepository {
 
     /** True when the app has no row yet. */
     suspend fun isAppIncluded(packageName: String): Boolean
+
+    /** The newest [limit] unread items (ACTIVE, unread, not snoozed), newest `sortAt` first; for the list widget. */
+    suspend fun latestUnread(limit: Int): List<NotificationItem>
 }

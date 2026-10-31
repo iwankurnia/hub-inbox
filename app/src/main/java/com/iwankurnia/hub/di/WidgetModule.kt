@@ -1,7 +1,7 @@
 package com.iwankurnia.hub.di
 
-import com.iwankurnia.hub.data.NoOpWidgetRefresher
 import com.iwankurnia.hub.data.WidgetRefresher
+import com.iwankurnia.hub.widget.GlanceWidgetRefresher
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -12,5 +12,5 @@ import dagger.hilt.components.SingletonComponent
 abstract class WidgetModule {
 
     @Binds
-    abstract fun bindWidgetRefresher(impl: NoOpWidgetRefresher): WidgetRefresher
+    abstract fun bindWidgetRefresher(impl: GlanceWidgetRefresher): WidgetRefresher
 }
