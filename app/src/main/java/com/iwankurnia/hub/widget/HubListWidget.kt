@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,6 +36,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -54,12 +56,32 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.text.DateFormat
 
-/** Rows the list widget shows at [size]: 4x2 two, 4x3 four, 4x4 six (spec 4.9). */
-fun rowsFor(size: DpSize): Int = when {
-    size.height < 150.dp -> 2
-    size.height < 260.dp -> 4
-    else -> 6
+/** Vertical padding of the list widget, top plus bottom. */
+internal val LIST_PADDING_DP = 16.dp
+
+/** Height of the header row. */
+internal val HEADER_DP = 28.dp
+
+/** Height of one item row; the 3dp bar fills it. */
+internal val ROW_DP = 40.dp
+
+/** Extra height of the newest row for its Reply and Read chips. */
+internal val CHIPS_DP = 26.dp
+
+/** Height the list widget needs for [rows] item rows: padding, header, the newest row with chips, the rest plain. */
+fun listHeightFor(rows: Int): Dp = LIST_PADDING_DP + HEADER_DP + CHIPS_DP + ROW_DP * rows
+
+/**
+ * Rows that fit in [size]: the newest row with its chips always, then as many plain rows as the height allows,
+ * clamped to 1..6. The responsive sizes give 1, 2, 4 and 6 rows (spec 4.9: 4x2 two, 4x3 four, 4x4 six).
+ */
+fun rowsFor(size: DpSize): Int {
+    val spare = size.height - listHeightFor(1)
+    val extra = if (spare < 0.dp) 0 else (spare.value / ROW_DP.value).toInt()
+    return (1 + extra).coerceIn(1, MAX_ROWS)
 }
+
+private const val MAX_ROWS = 6
 
 /** The item a widget "Read" chip marks read. */
 val ItemIdKey = ActionParameters.Key<Long>("itemId")
@@ -68,7 +90,7 @@ val ItemIdKey = ActionParameters.Key<Long>("itemId")
 class HubListWidget : GlanceAppWidget() {
 
     override val sizeMode = SizeMode.Responsive(
-        setOf(DpSize(250.dp, 110.dp), DpSize(250.dp, 180.dp), DpSize(250.dp, 300.dp)),
+        setOf(listHeightFor(1), listHeightFor(2), listHeightFor(4), listHeightFor(6)).map { DpSize(250.dp, it) }.toSet(),
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -88,10 +110,6 @@ class HubListWidget : GlanceAppWidget() {
             val rows = repository.latestUnread(MAX_ROWS).map { item -> ListRow(item, icons.iconBitmap(item.packageName, iconPx)) }
             ListState(unread, rows)
         }
-
-    private companion object {
-        const val MAX_ROWS = 6
-    }
 }
 
 /**
@@ -124,7 +142,7 @@ private fun HubListContent(state: ListState) {
             .appWidgetBackground()
             .background(GlanceTheme.colors.surface)
             .cornerRadius(28.dp)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = LIST_PADDING_DP / 2),
     ) {
         Header(state.unread)
         if (state.rows.isEmpty()) {
@@ -145,7 +163,7 @@ private fun Header(unread: Int) {
     val context = LocalContext.current
     Row(
         modifier = GlanceModifier.fillMaxWidth()
-            .padding(bottom = 6.dp)
+            .height(HEADER_DP)
             .clickable(actionStartActivity(HubIntents.open(context))),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -186,14 +204,15 @@ private fun ItemRow(row: ListRow, showActions: Boolean) {
     val item = row.item
     Row(
         modifier = GlanceModifier.fillMaxWidth()
+            .height(if (showActions) ROW_DP + CHIPS_DP else ROW_DP)
             .padding(vertical = 4.dp)
             .clickable(actionStartActivity(HubIntents.open(context, itemId = item.id))),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The 3dp unread bar; every row here is unread.
+        // The 3dp unread bar fills the row, whose height is the same constant rowsFor counts with.
         Box(
             modifier = GlanceModifier.width(3.dp)
-                .height(if (showActions) 62.dp else 34.dp)
+                .fillMaxHeight()
                 .background(GlanceTheme.colors.primary)
                 .cornerRadius(2.dp),
         ) {}
@@ -221,7 +240,7 @@ private fun ItemRow(row: ListRow, showActions: Boolean) {
                 style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
             )
             if (showActions) {
-                Row(modifier = GlanceModifier.padding(top = 6.dp)) {
+                Row(modifier = GlanceModifier.padding(top = 4.dp)) {
                     // Reply is only offered when the source notification carries a reply action.
                     if (item.hasReply) {
                         Chip(
@@ -275,7 +294,7 @@ private fun Chip(label: String, modifier: GlanceModifier) {
         text = label,
         modifier = modifier.background(GlanceTheme.colors.primaryContainer)
             .cornerRadius(10.dp)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 10.dp, vertical = 3.dp),
         style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold),
     )
 }

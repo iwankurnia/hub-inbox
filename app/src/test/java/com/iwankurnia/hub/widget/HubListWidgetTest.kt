@@ -14,6 +14,7 @@ import com.iwankurnia.hub.data.RoomHubRepository
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -24,13 +25,25 @@ class HubListWidgetTest {
 
     @Test
     fun rowsForSize_2_4_6() {
-        assertEquals(2, rowsFor(DpSize(250.dp, 110.dp)))
-        assertEquals(2, rowsFor(DpSize(250.dp, 149.dp)))
-        assertEquals(4, rowsFor(DpSize(250.dp, 150.dp)))
-        assertEquals(4, rowsFor(DpSize(250.dp, 180.dp)))
-        assertEquals(4, rowsFor(DpSize(250.dp, 259.dp)))
-        assertEquals(6, rowsFor(DpSize(250.dp, 260.dp)))
-        assertEquals(6, rowsFor(DpSize(250.dp, 300.dp)))
+        // 16dp padding + 28dp header + 66dp newest row with chips = 110dp, then 40dp per extra row.
+        assertEquals(110.dp, listHeightFor(1))
+        assertEquals(1, rowsFor(DpSize(250.dp, 110.dp)))
+        assertEquals(2, rowsFor(DpSize(250.dp, 150.dp)))
+        assertEquals(2, rowsFor(DpSize(250.dp, 180.dp)))
+        assertEquals(4, rowsFor(DpSize(250.dp, 230.dp)))
+        assertEquals(5, rowsFor(DpSize(250.dp, 300.dp)))
+        assertEquals(6, rowsFor(DpSize(250.dp, 310.dp)))
+        assertEquals(6, rowsFor(DpSize(250.dp, 600.dp)))
+        assertEquals(1, rowsFor(DpSize(250.dp, 40.dp)))
+
+        (110..600).forEach { height ->
+            val rows = rowsFor(DpSize(250.dp, height.dp))
+            assertTrue("$rows rows overflow ${height}dp", listHeightFor(rows) <= height.dp)
+        }
+        HubListWidget().sizeMode.sizes.forEach { size ->
+            assertEquals(size.height, listHeightFor(rowsFor(size)))
+        }
+        assertEquals(listOf(1, 2, 4, 6), HubListWidget().sizeMode.sizes.map(::rowsFor).sorted())
     }
 
     @Test
