@@ -12,3 +12,4 @@
 *.aab
 .kotlin/
 .superpowers/
+.worktrees/
