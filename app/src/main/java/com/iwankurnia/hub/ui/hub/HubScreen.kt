@@ -21,6 +21,10 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.MarkEmailUnread
+import androidx.compose.material.icons.rounded.Inbox
+import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.InputChip
@@ -38,7 +42,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -293,15 +296,20 @@ private fun HubTopBar(
 
 @Composable
 private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
-    val tabs = listOf(HubTab.ALL to R.string.tab_all, HubTab.UNREAD to R.string.tab_unread, HubTab.DELETED to R.string.tab_deleted)
+    val tabs = listOf(
+        Triple(HubTab.ALL, R.string.tab_all, Icons.Rounded.Inbox),
+        Triple(HubTab.UNREAD, R.string.tab_unread, Icons.Rounded.MarkEmailUnread),
+        Triple(HubTab.DELETED, R.string.tab_deleted, Icons.Rounded.Delete),
+    )
     PrimaryTabRow(
         selectedTabIndex = tabs.indexOfFirst { it.first == tab },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        tabs.forEach { (value, label) ->
-            Tab(
+        tabs.forEach { (value, label, icon) ->
+            LeadingIconTab(
                 selected = value == tab,
                 onClick = { onSelect(value) },
+                icon = { Icon(icon, contentDescription = null) },
                 text = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(stringResource(label))
