@@ -126,7 +126,9 @@ posts is captured, stored locally and shown in one stream.
 ### 4.2 Hub screen (home)
 
 - Large "Hub" title top-left; search and settings icons top-right.
-- Three top tabs: **All · Unread · Deleted** **(Iwan)**. Swipeable.
+- Three top tabs: **All · Unread · Deleted** **(Iwan)**. Switched by tap; not
+  swipeable, because row swipes are the primary gesture **(my call, amended
+  during implementation)**.
 - Under the tabs, a horizontal chip row: "Every app" then one chip per
   app that has items, ordered by most recent notification. Tapping a chip
   filters the stream to that app; the filter persists across tabs.
