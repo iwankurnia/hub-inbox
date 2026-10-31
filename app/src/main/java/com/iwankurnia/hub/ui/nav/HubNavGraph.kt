@@ -1,9 +1,12 @@
 package com.iwankurnia.hub.ui.nav
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.iwankurnia.hub.PendingRequests
 import com.iwankurnia.hub.ui.hub.HubScreen
 import com.iwankurnia.hub.ui.onboarding.OnboardingScreen
 import com.iwankurnia.hub.ui.search.SearchScreen
@@ -31,9 +34,12 @@ fun HubNavGraph(startDestination: String) {
             )
         }
         composable(Routes.HUB) {
+            val request by PendingRequests.pending.collectAsStateWithLifecycle()
             HubScreen(
                 onOpenSearch = { navController.navigate(Routes.SEARCH) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                request = request,
+                onRequestConsumed = PendingRequests::consume,
             )
         }
         composable(Routes.SEARCH) {
