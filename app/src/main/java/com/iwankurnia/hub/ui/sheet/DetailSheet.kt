@@ -18,7 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.MarkEmailRead
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iwankurnia.hub.R
+import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.data.ThreadEntry
 import com.iwankurnia.hub.snooze.SnoozeTimes
@@ -68,11 +71,16 @@ data class DetailState(
     val nowMs: Long,
 )
 
-/** Callbacks from the sheet body. [onReply] returns false when the reply could not be sent. */
+/**
+ * Callbacks from the sheet body. [onReply] returns false when the reply could not be sent. A Deleted item
+ * offers [onRestore] and [onPurge] in place of mark read, snooze and delete.
+ */
 class DetailSheetActions(
     val onMarkRead: () -> Unit = {},
     val onSnooze: (Long) -> Unit = {},
     val onDelete: () -> Unit = {},
+    val onRestore: () -> Unit = {},
+    val onPurge: () -> Unit = {},
     val onOpenSnooze: () -> Unit = {},
     val onOpenInApp: () -> Unit = {},
     val onReply: (String) -> Boolean = { false },
@@ -132,6 +140,8 @@ fun DetailSheet(itemId: Long, onDismiss: () -> Unit) {
                 onMarkRead = { viewModel.markRead(); close() },
                 onSnooze = { viewModel.snooze(it); close() },
                 onDelete = { viewModel.delete(); close() },
+                onRestore = { viewModel.restore(); close() },
+                onPurge = { viewModel.purge(); close() },
                 onOpenSnooze = viewModel::refreshSnoozeOptions,
                 onOpenInApp = viewModel::openInApp,
                 onReply = viewModel::reply,
@@ -304,43 +314,15 @@ private fun ActionChips(
     onToggleSnooze: () -> Unit,
     actions: DetailSheetActions,
 ) {
-    val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AssistChip(
-            onClick = actions.onMarkRead,
-            label = { Text(stringResource(R.string.action_mark_read)) },
-            leadingIcon = { ChipIcon { Icon(Icons.Rounded.MarkEmailRead, contentDescription = null) } },
-            colors = AssistChipDefaults.assistChipColors(
-                containerColor = colors.primaryContainer,
-                labelColor = colors.onPrimaryContainer,
-                leadingIconContentColor = colors.onPrimaryContainer,
-            ),
-            border = null,
-        )
-        AssistChip(
-            onClick = onToggleSnooze,
-            label = { Text(stringResource(R.string.action_snooze)) },
-            leadingIcon = { ChipIcon { Icon(Icons.Rounded.Snooze, contentDescription = null) } },
-            colors = AssistChipDefaults.assistChipColors(
-                containerColor = HubColors.snoozedChip,
-                labelColor = HubColors.snoozedOnChip,
-                leadingIconContentColor = HubColors.snoozedOnChip,
-            ),
-            border = if (snoozeOpen) BorderStroke(2.dp, HubColors.snoozedBar) else null,
-        )
-        AssistChip(
-            onClick = actions.onDelete,
-            label = { Text(stringResource(R.string.action_delete)) },
-            leadingIcon = { ChipIcon { Icon(Icons.Rounded.Delete, contentDescription = null) } },
-            colors = AssistChipDefaults.assistChipColors(
-                labelColor = colors.error,
-                leadingIconContentColor = colors.error,
-            ),
-            border = BorderStroke(1.dp, colors.error),
-        )
+        if (state.item.state == ItemState.DELETED) {
+            DeletedChips(actions)
+        } else {
+            LiveChips(snoozeOpen, onToggleSnooze, actions)
+        }
         AssistChip(
             onClick = actions.onOpenInApp,
             label = { Text(stringResource(R.string.action_open_in, state.appLabel)) },
@@ -350,6 +332,71 @@ private fun ActionChips(
             AssistChip(onClick = { actions.onLiveAction(index) }, label = { Text(title) })
         }
     }
+}
+
+/** Mark read, Snooze and Delete for an item in the stream. */
+@Composable
+private fun LiveChips(snoozeOpen: Boolean, onToggleSnooze: () -> Unit, actions: DetailSheetActions) {
+    val colors = MaterialTheme.colorScheme
+    AssistChip(
+        onClick = actions.onMarkRead,
+        label = { Text(stringResource(R.string.action_mark_read)) },
+        leadingIcon = { ChipIcon { Icon(Icons.Rounded.MarkEmailRead, contentDescription = null) } },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = colors.primaryContainer,
+            labelColor = colors.onPrimaryContainer,
+            leadingIconContentColor = colors.onPrimaryContainer,
+        ),
+        border = null,
+    )
+    AssistChip(
+        onClick = onToggleSnooze,
+        label = { Text(stringResource(R.string.action_snooze)) },
+        leadingIcon = { ChipIcon { Icon(Icons.Rounded.Snooze, contentDescription = null) } },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = HubColors.snoozedChip,
+            labelColor = HubColors.snoozedOnChip,
+            leadingIconContentColor = HubColors.snoozedOnChip,
+        ),
+        border = if (snoozeOpen) BorderStroke(2.dp, HubColors.snoozedBar) else null,
+    )
+    AssistChip(
+        onClick = actions.onDelete,
+        label = { Text(stringResource(R.string.action_delete)) },
+        leadingIcon = { ChipIcon { Icon(Icons.Rounded.Delete, contentDescription = null) } },
+        colors = AssistChipDefaults.assistChipColors(
+            labelColor = colors.error,
+            leadingIconContentColor = colors.error,
+        ),
+        border = BorderStroke(1.dp, colors.error),
+    )
+}
+
+/** Restore and Delete for good for an item in the Deleted bin. */
+@Composable
+private fun DeletedChips(actions: DetailSheetActions) {
+    val colors = MaterialTheme.colorScheme
+    AssistChip(
+        onClick = actions.onRestore,
+        label = { Text(stringResource(R.string.action_restore)) },
+        leadingIcon = { ChipIcon { Icon(Icons.Rounded.Restore, contentDescription = null) } },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = colors.primaryContainer,
+            labelColor = colors.onPrimaryContainer,
+            leadingIconContentColor = colors.onPrimaryContainer,
+        ),
+        border = null,
+    )
+    AssistChip(
+        onClick = actions.onPurge,
+        label = { Text(stringResource(R.string.action_delete_for_good)) },
+        leadingIcon = { ChipIcon { Icon(Icons.Rounded.DeleteForever, contentDescription = null) } },
+        colors = AssistChipDefaults.assistChipColors(
+            labelColor = colors.error,
+            leadingIconContentColor = colors.error,
+        ),
+        border = BorderStroke(1.dp, colors.error),
+    )
 }
 
 @Composable

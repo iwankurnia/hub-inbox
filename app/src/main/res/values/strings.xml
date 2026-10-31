@@ -70,6 +70,7 @@
     <string name="deleted_banner_forever">Deleted items are kept until you empty them</string>
     <string name="action_empty_now">Empty now</string>
     <string name="action_restore">Restore</string>
+    <string name="action_delete_for_good">Delete for good</string>
     <string name="snackbar_restored">%1$s restored</string>
     <string name="snackbar_deleted_for_good">%1$s removed for good</string>
     <string name="snackbar_emptied">Deleted emptied</string>

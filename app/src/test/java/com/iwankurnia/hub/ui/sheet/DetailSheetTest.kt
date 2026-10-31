@@ -6,6 +6,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.iwankurnia.hub.data.ItemState
+import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.data.SentReply
 import com.iwankurnia.hub.data.ThreadEntry
 import com.iwankurnia.hub.snooze.SnoozeTimes
@@ -25,8 +27,8 @@ class DetailSheetTest {
     private val first = item(1, title = "Teguh", text = "PR rebased, can you check?", postedAt = 1_000L)
     private val second = item(2, title = "Teguh", text = "Thanks", postedAt = 3_000L)
 
-    private fun state(canReply: Boolean) = DetailState(
-        item = second,
+    private fun state(canReply: Boolean, item: NotificationItem = second) = DetailState(
+        item = item,
         appLabel = "WhatsApp",
         icon = null,
         thread = listOf(
@@ -43,9 +45,18 @@ class DetailSheetTest {
 
     private var snoozeOpens = 0
 
-    private fun setContent(canReply: Boolean) = compose.setContent {
+    private val clicked = mutableListOf<String>()
+
+    private fun setContent(canReply: Boolean, item: NotificationItem = second) = compose.setContent {
         HubTheme(dynamicColor = false) {
-            DetailSheetBody(state = state(canReply), actions = DetailSheetActions(onOpenSnooze = { snoozeOpens++ }))
+            DetailSheetBody(
+                state = state(canReply, item),
+                actions = DetailSheetActions(
+                    onOpenSnooze = { snoozeOpens++ },
+                    onRestore = { clicked += "restore" },
+                    onPurge = { clicked += "purge" },
+                ),
+            )
         }
     }
 
@@ -69,6 +80,21 @@ class DetailSheetTest {
         compose.onNodeWithText("In 1 hour").assertExists()
         compose.onNodeWithText("Pick date & time…").assertExists()
         assertEquals("opening the picker refreshes the times", 1, snoozeOpens)
+    }
+
+    @Test
+    fun sheet_deletedItem_offersRestoreAndDeleteForGood() {
+        setContent(canReply = false, item = second.copy(state = ItemState.DELETED, deletedAt = 3_500L))
+
+        compose.onNodeWithText("Mark read").assertDoesNotExist()
+        compose.onNodeWithText("Snooze").assertDoesNotExist()
+        compose.onNodeWithText("Delete").assertDoesNotExist()
+        compose.onNodeWithText("Open in WhatsApp").assertExists()
+
+        compose.onNodeWithText("Restore").performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithText("Delete for good").performSemanticsAction(SemanticsActions.OnClick)
+
+        assertEquals(listOf("restore", "purge"), clicked)
     }
 
     @Test

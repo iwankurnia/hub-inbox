@@ -140,6 +140,24 @@ class DetailViewModel internal constructor(
         }
     }
 
+    /** Puts a Deleted item back in the stream at its original time. */
+    fun restore() {
+        val id = itemId.value ?: return
+        viewModelScope.launch {
+            repository.restore(listOf(id))
+            scheduler.reschedule()
+        }
+    }
+
+    /** Removes a Deleted item for good. */
+    fun purge() {
+        val id = itemId.value ?: return
+        viewModelScope.launch {
+            repository.purge(listOf(id))
+            scheduler.reschedule()
+        }
+    }
+
     /** Sends [text] through the notification's own reply action; records it only when that worked. */
     fun reply(text: String): Boolean {
         val current = currentItem() ?: return false

@@ -188,6 +188,27 @@ class DetailViewModelTest {
     }
 
     @Test
+    fun deletedItem_restore() = runTest {
+        val vm = viewModel(itemId = 3L)
+
+        vm.restore()
+
+        val restored = repository.item(3)!!
+        assertEquals(ItemState.ACTIVE, restored.state)
+        assertEquals(null, restored.deletedAt)
+    }
+
+    @Test
+    fun deletedItem_purge() = runTest {
+        val vm = viewModel(itemId = 3L)
+
+        vm.purge()
+
+        assertEquals(null, repository.item(3))
+        assertTrue(repository.item(1) != null)
+    }
+
+    @Test
     fun liveActions_listedAndRun() = runTest {
         liveActions.actionTitles = listOf("Mark as read", "Like")
         val vm = viewModel()
