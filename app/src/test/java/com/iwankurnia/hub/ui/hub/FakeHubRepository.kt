@@ -93,6 +93,9 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
     override fun appPrefs(): Flow<List<AppPref>> = flowOf(emptyList())
     override suspend fun setAppIncluded(packageName: String, included: Boolean) = Unit
     override suspend fun isAppIncluded(packageName: String): Boolean = true
+    override suspend fun latestUnread(limit: Int): List<NotificationItem> =
+        store.value.filter { it.state == ItemState.ACTIVE && !it.isRead && it.snoozedUntil == null }
+            .sortedByDescending { it.sortAt }.take(limit)
 
     companion object {
         fun item(

@@ -45,6 +45,7 @@ internal class FakeHubRepository : HubRepository {
     override suspend fun purge(ids: List<Long>) = TODO()
     override suspend fun emptyDeleted() = TODO()
     override suspend fun purgeDeletedOlderThan(cutoffMs: Long) = TODO()
+    override suspend fun latestUnread(limit: Int): List<NotificationItem> = TODO()
     override suspend fun snooze(ids: List<Long>, untilMs: Long) = TODO()
     override suspend fun unsnooze(ids: List<Long>) = TODO()
     override suspend fun wakeDue(nowMs: Long): List<NotificationItem> = TODO()
