@@ -97,7 +97,7 @@ interface HubDao {
 
     // Deleted bin
 
-    @Query("UPDATE items SET state = 'DELETED', deletedAt = :now WHERE id IN (:ids)")
+    @Query("UPDATE items SET state = 'DELETED', deletedAt = :now, snoozedUntil = NULL WHERE id IN (:ids)")
     suspend fun delete(ids: List<Long>, now: Long)
 
     @Query("UPDATE items SET state = 'ACTIVE', deletedAt = NULL WHERE id IN (:ids)")
@@ -120,13 +120,13 @@ interface HubDao {
     @Query("UPDATE items SET snoozedUntil = NULL WHERE id IN (:ids)")
     suspend fun unsnooze(ids: List<Long>)
 
-    @Query("SELECT id FROM items WHERE snoozedUntil IS NOT NULL AND snoozedUntil <= :nowMs")
+    @Query("SELECT id FROM items WHERE state = 'ACTIVE' AND snoozedUntil IS NOT NULL AND snoozedUntil <= :nowMs")
     suspend fun dueSnoozeIds(nowMs: Long): List<Long>
 
     @Query("UPDATE items SET snoozedUntil = NULL, isRead = 0, sortAt = :nowMs WHERE id IN (:ids)")
     suspend fun wake(ids: List<Long>, nowMs: Long)
 
-    @Query("SELECT MIN(snoozedUntil) FROM items WHERE snoozedUntil IS NOT NULL")
+    @Query("SELECT MIN(snoozedUntil) FROM items WHERE state = 'ACTIVE' AND snoozedUntil IS NOT NULL")
     suspend fun nextSnoozeAt(): Long?
 
     // Search

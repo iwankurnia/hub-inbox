@@ -192,6 +192,47 @@ class RoomHubRepositoryTest {
     }
 
     @Test
+    fun capture_skipsEchoedSentReply_withSender() = runTest {
+        val incoming = CapturedMessage("Ann", "Coming?", 10_000L)
+        val annId = ids(repo.capture(chat(listOf(incoming)))).single()
+        now = 20_000L
+        repo.recordSentReply(annId, "On my way")
+
+        val echoed = CapturedMessage("Iwan", "On my way", 30_000L)
+
+        assertEquals(CaptureResult.Ignored, repo.capture(chat(listOf(incoming, echoed))))
+        assertEquals(1, all().size)
+    }
+
+    @Test
+    fun wakeDue_ignoresDeletedItems() = runTest {
+        val id = ids(repo.capture(notif())).single()
+        repo.snooze(listOf(id), untilMs = 2_000_000L)
+
+        repo.delete(listOf(id))
+
+        assertTrue(repo.wakeDue(3_000_000L).isEmpty())
+        val item = repo.item(id)!!
+        assertEquals(ItemState.DELETED, item.state)
+        assertNull(item.snoozedUntil)
+    }
+
+    @Test
+    fun nextSnoozeAt_ignoresDeletedItems() = runTest {
+        val kept = ids(repo.capture(notif(key = "a"))).single()
+        val deleted = ids(repo.capture(notif(key = "b"))).single()
+        repo.snooze(listOf(kept), untilMs = 9_000_000L)
+        repo.snooze(listOf(deleted), untilMs = 2_000_000L)
+
+        repo.delete(listOf(deleted))
+
+        assertEquals(9_000_000L, repo.nextSnoozeAt())
+        repo.restore(listOf(deleted))
+        assertNull(repo.item(deleted)!!.snoozedUntil)
+        assertEquals(9_000_000L, repo.nextSnoozeAt())
+    }
+
+    @Test
     fun pagedItems_unreadExcludesSnoozed() = runTest {
         val a = ids(repo.capture(notif(key = "a", postedAt = 100L))).single()
         val b = ids(repo.capture(notif(key = "b", postedAt = 200L))).single()

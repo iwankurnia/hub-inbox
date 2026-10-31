@@ -160,10 +160,9 @@ class RoomHubRepository(
         return if (ids.isEmpty()) CaptureResult.Ignored else CaptureResult.Inserted(ids)
     }
 
-    /** The user's own messages (sender null) that match a reply sent from Hub within the echo window. */
+    /** A message matching a reply sent from Hub in the same conversation within the echo window. */
     private suspend fun isEchoOfSentReply(conversationId: String?, message: CapturedMessage, at: Long): Boolean =
-        message.sender == null &&
-            dao.sentReplyExists(conversationId, message.text, at - ECHO_WINDOW_MS, at + ECHO_WINDOW_MS)
+        dao.sentReplyExists(conversationId, message.text, at - ECHO_WINDOW_MS, at + ECHO_WINDOW_MS)
 
     /** Identical re-posts are ignored; a still-unread item is updated in place; anything else is a new item. */
     private suspend fun captureSingle(c: CapturedNotification): CaptureResult {

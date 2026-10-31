@@ -38,7 +38,7 @@ interface HubRepository {
     suspend fun markAllRead(packageName: String?)
     suspend fun markReadByKey(notifKey: String)
 
-    /** state = DELETED, deletedAt = now. */
+    /** state = DELETED, deletedAt = now, snoozedUntil cleared. */
     suspend fun delete(ids: List<Long>)
 
     /** state = ACTIVE, deletedAt = null. */
@@ -53,7 +53,7 @@ interface HubRepository {
     suspend fun snooze(ids: List<Long>, untilMs: Long)
     suspend fun unsnooze(ids: List<Long>)
 
-    /** Items with snoozedUntil <= now become unread with sortAt = now and snoozedUntil cleared; returns them. */
+    /** ACTIVE items with snoozedUntil <= now become unread with sortAt = now and snoozedUntil cleared; returns them. */
     suspend fun wakeDue(nowMs: Long): List<NotificationItem>
     suspend fun nextSnoozeAt(): Long?
 
