@@ -78,6 +78,15 @@ interface HubDao {
     @Query("SELECT * FROM items WHERE id IN (:ids)")
     suspend fun items(ids: List<Long>): List<NotificationItem>
 
+    @Query("SELECT DISTINCT notifKey FROM items WHERE id IN (:ids)")
+    suspend fun notifKeys(ids: List<Long>): List<String>
+
+    @Query(
+        "SELECT DISTINCT notifKey FROM items WHERE state = 'ACTIVE' AND isRead = 0 " +
+            "AND (:pkg IS NULL OR packageName = :pkg)",
+    )
+    suspend fun unreadNotifKeys(pkg: String?): List<String>
+
     // Read state
 
     @Query("UPDATE items SET isRead = 1 WHERE id IN (:ids)")

@@ -65,6 +65,14 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
     }
 
     override suspend fun markReadByKey(notifKey: String) = Unit
+    override suspend fun notifKeys(ids: List<Long>): List<String> =
+        store.value.filter { it.id in ids }.map { it.notifKey }.distinct()
+
+    override suspend fun unreadNotifKeys(packageName: String?): List<String> =
+        store.value.filter {
+            it.state == ItemState.ACTIVE && !it.isRead && (packageName == null || it.packageName == packageName)
+        }.map { it.notifKey }.distinct()
+
     override suspend fun delete(ids: List<Long>) =
         update(ids) { it.copy(state = ItemState.DELETED, deletedAt = now, snoozedUntil = null) }
 

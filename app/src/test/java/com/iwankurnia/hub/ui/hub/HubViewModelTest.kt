@@ -164,6 +164,33 @@ class HubViewModelTest {
     }
 
     @Test
+    fun snoozeSelected_cancelsNotifications() = runTest(dispatcher) {
+        val live = RecordingLiveActions()
+        vm = HubViewModel(repo, live, flowOf(30))
+        vm.toggleSelect(1)
+        vm.toggleSelect(3)
+
+        vm.snoozeSelected(50_000L)
+
+        assertEquals(listOf("k1", "k3"), live.cancelled.sorted())
+    }
+
+    @Test
+    fun markAllRead_cancelsNotifications() = runTest(dispatcher) {
+        val live = RecordingLiveActions()
+        vm = HubViewModel(repo, live, flowOf(30))
+
+        vm.filterApp("com.whatsapp")
+        vm.markAllRead()
+        // Item 2 is already read (snoozed), so only item 1 of WhatsApp had a notification to clear.
+        assertEquals(listOf("k1"), live.cancelled)
+
+        vm.filterApp(null)
+        vm.markAllRead()
+        assertEquals(listOf("k1", "k3"), live.cancelled)
+    }
+
+    @Test
     fun snoozeSelected_reschedulesAlarm() = runTest(dispatcher) {
         val alarms = withRecordedReschedules()
         vm.toggleSelect(1)

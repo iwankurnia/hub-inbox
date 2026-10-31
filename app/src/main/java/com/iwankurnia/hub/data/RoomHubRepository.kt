@@ -71,6 +71,11 @@ class RoomHubRepository(
 
     override suspend fun markReadByKey(notifKey: String) = mutate { dao.markReadByKey(notifKey) }
 
+    override suspend fun notifKeys(ids: List<Long>): List<String> =
+        if (ids.isEmpty()) emptyList() else dao.notifKeys(ids)
+
+    override suspend fun unreadNotifKeys(packageName: String?): List<String> = dao.unreadNotifKeys(packageName)
+
     override suspend fun delete(ids: List<Long>) = mutate { dao.delete(ids, clock()) }
 
     override suspend fun restore(ids: List<Long>) = mutate { dao.restore(ids) }

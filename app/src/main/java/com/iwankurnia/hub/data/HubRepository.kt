@@ -38,6 +38,12 @@ interface HubRepository {
     suspend fun markAllRead(packageName: String?)
     suspend fun markReadByKey(notifKey: String)
 
+    /** The distinct notification keys of these items, in any state; used to clear their system notifications. */
+    suspend fun notifKeys(ids: List<Long>): List<String>
+
+    /** The distinct notification keys of ACTIVE unread items, optionally for one app; what [markAllRead] will touch. */
+    suspend fun unreadNotifKeys(packageName: String?): List<String>
+
     /** state = DELETED, deletedAt = now, snoozedUntil cleared. */
     suspend fun delete(ids: List<Long>)
 

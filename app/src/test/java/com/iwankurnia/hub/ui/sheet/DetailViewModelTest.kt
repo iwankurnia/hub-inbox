@@ -74,6 +74,15 @@ class DetailViewModelTest {
     }
 
     @Test
+    fun onOpened_cancelsNotification() = runTest {
+        val vm = viewModel()
+
+        vm.onOpened()
+
+        assertEquals(listOf("key-1"), liveActions.cancelled)
+    }
+
+    @Test
     fun reopen_marksReadAgain() = runTest {
         val vm = viewModel()
 

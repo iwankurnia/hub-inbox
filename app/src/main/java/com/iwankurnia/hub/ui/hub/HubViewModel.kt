@@ -137,8 +137,14 @@ class HubViewModel internal constructor(
         }
     }
 
+    /** Marks everything read (for the filtered app, when one is chosen) and clears those system notifications. */
     fun markAllRead() {
-        viewModelScope.launch { repository.markAllRead(_packageFilter.value) }
+        val packageName = _packageFilter.value
+        viewModelScope.launch {
+            val keys = repository.unreadNotifKeys(packageName)
+            repository.markAllRead(packageName)
+            keys.forEach(liveActions::cancel)
+        }
     }
 
     fun undo() {
@@ -182,8 +188,10 @@ class HubViewModel internal constructor(
         if (ids.isEmpty()) return
         viewModelScope.launch {
             val before = ids.mapNotNull { repository.item(it) }
+            val keys = repository.notifKeys(ids)
             repository.snooze(ids, untilMs)
             rescheduleAlarm()
+            keys.forEach(liveActions::cancel)
             val wasUnread = before.filterNot { it.isRead }.map { it.id }
             offerUndo(
                 UndoAction(

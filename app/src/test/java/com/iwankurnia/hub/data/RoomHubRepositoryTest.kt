@@ -366,4 +366,25 @@ class RoomHubRepositoryTest {
         repo.setAppIncluded("com.example.unknown", included = true)
         assertTrue(repo.isAppIncluded("com.example.unknown"))
     }
+
+    @Test
+    fun notifKeys_and_unreadNotifKeys() = runTest {
+        val chatIds = ids(
+            repo.capture(chat(listOf(CapturedMessage(null, "Hi", 400L), CapturedMessage(null, "There?", 450L)))),
+        )
+        val mail = ids(repo.capture(notif(key = "m1", pkg = "mail", postedAt = 100L))).single()
+        val mailRead = ids(repo.capture(notif(key = "m2", pkg = "mail", postedAt = 200L))).single()
+        val mailDeleted = ids(repo.capture(notif(key = "m3", pkg = "mail", postedAt = 300L))).single()
+        repo.markRead(listOf(mailRead))
+        repo.delete(listOf(mailDeleted))
+
+        // Two messages of one notification share a key; it comes back once.
+        assertEquals(listOf("chat", "m1"), repo.notifKeys(chatIds + mail).sorted())
+        assertEquals(listOf("m2", "m3"), repo.notifKeys(listOf(mailRead, mailDeleted)).sorted())
+        assertTrue(repo.notifKeys(emptyList()).isEmpty())
+
+        // Only ACTIVE unread items, optionally for one app.
+        assertEquals(listOf("chat", "m1"), repo.unreadNotifKeys(null).sorted())
+        assertEquals(listOf("m1"), repo.unreadNotifKeys("mail"))
+    }
 }

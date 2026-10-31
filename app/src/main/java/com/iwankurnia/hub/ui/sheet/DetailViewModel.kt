@@ -83,11 +83,14 @@ class DetailViewModel internal constructor(
     val snoozeOptions: StateFlow<List<SnoozeTimes.Option>> = _snoozeOptions.asStateFlow()
 
     /**
-     * Call each time the sheet opens: marks the item read (spec 4.3). Not done in `init` because the
+     * Call each time the sheet opens: marks the item read and clears its system notification (spec 4.1, 4.3). Not done in `init` because the
      * view model outlives the sheet and is reused when the same item is opened again.
      */
     fun onOpened() {
-        viewModelScope.launch { repository.markRead(listOf(itemId)) }
+        viewModelScope.launch {
+            repository.markRead(listOf(itemId))
+            repository.notifKeys(listOf(itemId)).forEach(liveActions::cancel)
+        }
     }
 
     /** Recomputes the snooze times from now; call each time the picker opens (spec 4.6). */

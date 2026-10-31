@@ -72,6 +72,14 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
     override suspend fun markReadByKey(notifKey: String) =
         items.update { list -> list.map { if (it.notifKey == notifKey) it.copy(isRead = true) else it } }
 
+    override suspend fun notifKeys(ids: List<Long>): List<String> =
+        items.value.filter { it.id in ids }.map { it.notifKey }.distinct()
+
+    override suspend fun unreadNotifKeys(packageName: String?): List<String> =
+        items.value.filter {
+            it.state == ItemState.ACTIVE && !it.isRead && (packageName == null || it.packageName == packageName)
+        }.map { it.notifKey }.distinct()
+
     override suspend fun delete(ids: List<Long>) =
         change(ids) { it.copy(state = ItemState.DELETED, deletedAt = clock(), snoozedUntil = null) }
 

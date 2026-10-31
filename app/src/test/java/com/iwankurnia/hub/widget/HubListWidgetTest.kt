@@ -60,6 +60,16 @@ class HubListWidgetTest {
     }
 
     @Test
+    fun markReadAction_cancelsNotification() = runTest {
+        val app = ApplicationProvider.getApplicationContext<WidgetTestApp>()
+        val action = MarkReadAction(redraw = { _, _ -> })
+
+        action.onAction(app, object : GlanceId {}, actionParametersOf(ItemIdKey to 7L))
+
+        assertEquals(listOf("key-7"), app.liveActions.cancelled)
+    }
+
+    @Test
     fun latestUnread_newestUnreadActiveOnly() = runTest {
         val app = ApplicationProvider.getApplicationContext<WidgetTestApp>()
         val db = Room.inMemoryDatabaseBuilder(app, HubDatabase::class.java).allowMainThreadQueries().build()

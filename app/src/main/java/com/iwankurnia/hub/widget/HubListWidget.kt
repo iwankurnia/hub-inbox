@@ -113,8 +113,9 @@ class HubListWidget : GlanceAppWidget() {
 }
 
 /**
- * Marks one item read from the widget's "Read" chip, then redraws the widget. Glance creates it
- * through the no-argument constructor; tests replace [redraw], which needs WorkManager.
+ * Marks one item read from the widget's "Read" chip, clears its system notification (spec 4.1), then
+ * redraws the widget. Glance creates it through the no-argument constructor; tests replace [redraw],
+ * which needs WorkManager.
  */
 class MarkReadAction(
     private val redraw: suspend (Context, GlanceId) -> Unit = { context, glanceId ->
@@ -123,7 +124,10 @@ class MarkReadAction(
 ) : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         val itemId = parameters[ItemIdKey] ?: return
-        widgetEntryPoint(context).repository().markRead(listOf(itemId))
+        val entryPoint = widgetEntryPoint(context)
+        val repository = entryPoint.repository()
+        repository.markRead(listOf(itemId))
+        repository.notifKeys(listOf(itemId)).forEach(entryPoint.liveActions()::cancel)
         redraw(context, glanceId)
     }
 }
