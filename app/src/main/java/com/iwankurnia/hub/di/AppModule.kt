@@ -3,7 +3,7 @@ package com.iwankurnia.hub.di
 import android.content.Context
 import androidx.room.Room
 import com.iwankurnia.hub.capture.LiveActions
-import com.iwankurnia.hub.capture.NoLiveActions
+import com.iwankurnia.hub.capture.LiveActionsRegistry
 import com.iwankurnia.hub.data.HubDao
 import com.iwankurnia.hub.data.HubDatabase
 import com.iwankurnia.hub.data.HubRepository
@@ -34,6 +34,6 @@ abstract class AppModule {
         fun provideHubDao(db: HubDatabase): HubDao = db.hubDao()
 
         @Provides
-        fun provideLiveActions(): LiveActions = NoLiveActions
+        fun provideLiveActions(registry: LiveActionsRegistry): LiveActions = registry
     }
 }
