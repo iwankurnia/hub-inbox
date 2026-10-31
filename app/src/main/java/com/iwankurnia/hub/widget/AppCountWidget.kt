@@ -47,8 +47,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-/** App tiles that fit beside the total in [widthDp]: 72dp for the total, 48dp per app, 1 to 8. */
-fun appsThatFit(widthDp: Int): Int = ((widthDp - 72) / 48).coerceIn(1, MAX_APPS)
+/** App tiles that fit beside the total in [widthDp]: 100dp for padding, total and divider, 48dp per app, 1 to 8. */
+fun appsThatFit(widthDp: Int): Int = ((widthDp - FIXED_DP) / APP_SLOT_DP).coerceIn(1, MAX_APPS)
 
 /** Apps with nothing unread show no badge and are dimmed instead. */
 fun showBadge(unread: Int): Boolean = unread > 0
@@ -90,6 +90,12 @@ private data class BarState(val total: Int, val apps: List<AppTile>)
 private data class AppTile(val packageName: String, val label: String, val unread: Int, val icon: Bitmap?)
 
 private const val MAX_APPS = 8
+
+/** 28dp horizontal padding, about 61dp for the total, the 1dp divider and its 8dp spacer, rounded up. */
+private const val FIXED_DP = 100
+
+/** One [AppSlot]. */
+private const val APP_SLOT_DP = 48
 private const val ICON_DP = 40
 private const val DIMMED_ALPHA = 0.4f
 

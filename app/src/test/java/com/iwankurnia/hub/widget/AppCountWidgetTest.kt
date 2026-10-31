@@ -9,6 +9,10 @@ class AppCountWidgetTest {
 
     @Test
     fun appCountWidget_truncatesToWidth() {
+        // 100dp fixed part (28 padding, ~61 total, 1 divider, 8 spacer), then 48dp per app.
+        assertEquals(1, appsThatFit(180))
+        assertEquals(2, appsThatFit(196))
+        assertEquals(3, appsThatFit(280))
         assertEquals(3, appsThatFit(250))
         assertEquals(6, appsThatFit(400))
         assertEquals(1, appsThatFit(100))
