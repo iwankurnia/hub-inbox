@@ -125,14 +125,20 @@ posts is captured, stored locally and shown in one stream.
   search, settings and, only while the current tab has unread items, an
   overflow holding "Mark all read". Background surfaceContainerLow of the
   accent scheme (4.11). The compact 56dp bar of 1.0.5 is withdrawn.
-- Three top tabs: **All · Unread · Deleted** **(Iwan)** as an Android 16
-  connected button group **(Iwan, 2026-11-01: "for tab, let's do android
-  16 design", option A of docs/mockups/bar-and-tabs-android16.html, in
-  the direction A finish)**: 40dp segments with an 18dp icon and a 13.5sp
-  label, the selected one a 12dp-radius pill filled with the accent's
-  primary (near-black on the neutral scheme), the others 20dp tonal pills
-  in secondaryContainer; the unread count as a small translucent pill;
-  radius and colours animate on change. Switched by tap; not swipeable,
+- Three top tabs: **All · Unread · Deleted** **(Iwan)** in the style of
+  the tab strip on m3.material.io itself **(Iwan, 2026-11-01: "for tab
+  please follow this guideline", then a screenshot of the site's
+  Overview / Specs / Guidelines / Accessibility strip: "I want the tab
+  like this")**: one full-width 48dp rounded track split into three equal
+  sections, each a 20dp icon beside a 14sp label, the active section a
+  filled pill. Neutral scheme: track surfaceContainerHigh, pill a grey
+  step darker (`HubColors.tabTrack` / `tabSelected`); dynamic colour:
+  the wallpaper's surfaceContainer and secondaryContainer. Inactive text
+  onSurfaceVariant; the unread count as a small translucent pill; the
+  pill colour animates on change. Per the guideline: fixed, equal
+  sections, icon and label on every tab, at most four, a badge for the
+  count. The earlier button-group draft (option A of
+  docs/mockups/bar-and-tabs-android16.html) was replaced the same day. Switched by tap; not swipeable,
   because row swipes are the primary gesture **(my call, amended during
   implementation)**.
 - App filter **(Iwan, 2026-11-01: multi-select)**: a filter icon in the
@@ -289,7 +295,7 @@ Material structure, lose the noise. Reference:
   (edge to edge), dark icons on light, light on dark. 56dp top bars with a
   20sp semibold title; bar icons in the text colour, a step quieter.
   Select mode turns the bar surfaceContainerHigh with "N selected".
-- List: button-group tabs (4.2) on surfaceContainerLow; date
+- List: the rounded tab strip (4.2) on surfaceContainerLow; date
   bands 13sp letter-spaced capitals (raised from 11sp, Iwan 2026-11-01); rows with a 3dp unread bar, 32dp bare
   icon (greyscale when read), 14sp title (bold when unread), 11.5sp time,
   12.5sp preview, 10dp vertical padding and 1dp hairlines between rows of

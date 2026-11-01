@@ -3,8 +3,9 @@ package com.iwankurnia.hub.ui.hub
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -308,75 +309,78 @@ private fun HubTopBar(
     }
 }
 
-private val TabHeight = 40.dp
-private val TabPillRadius = 20.dp
-private val TabSelectedRadius = 12.dp
+private val TabStripHeight = 48.dp
 
 /**
- * Android 16's connected button group as the tab strip (Iwan chose it over primary tabs, 2026-11-01,
- * "like the one you proposed before" meaning the direction A finish): the selected tab is a filled,
- * squarer pill in the accent's primary (near-black on the neutral scheme), the others tonal pills.
- * The corner radius and colours animate so a change of tab morphs rather than snaps.
+ * The tab strip Iwan pointed at on m3.material.io (2026-11-01): one full-width rounded track split
+ * into equal sections, each an icon and a label side by side, the active section a filled tonal pill.
+ * On the neutral scheme the track and pill are two grey steps ([HubColors.tabTrack],
+ * [HubColors.tabSelected]); with dynamic colour on they are the wallpaper's surfaceContainer and
+ * secondaryContainer. The pill colour animates so a change of tab fades rather than snaps.
  */
 @Composable
 private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
     val accent = HubColors.accent
+    val neutral = accent === MaterialTheme.colorScheme
+    val track = if (neutral) HubColors.tabTrack else accent.surfaceContainer
+    val pill = if (neutral) HubColors.tabSelected else accent.secondaryContainer
+    val onPill = if (neutral) accent.onSurface else accent.onSecondaryContainer
     val tabs = listOf(
         Triple(HubTab.ALL, R.string.tab_all, Icons.Rounded.Inbox),
         Triple(HubTab.UNREAD, R.string.tab_unread, Icons.Rounded.MarkEmailUnread),
         Triple(HubTab.DELETED, R.string.tab_deleted, Icons.Rounded.Delete),
     )
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(accent.surfaceContainerLow)
-            .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp),
     ) {
-        tabs.forEach { (value, label, icon) ->
-            val selected = value == tab
-            val radius by animateDpAsState(if (selected) TabSelectedRadius else TabPillRadius, label = "tabRadius")
-            val container by animateColorAsState(
-                if (selected) accent.primary else accent.secondaryContainer,
-                label = "tabContainer",
-            )
-            val content by animateColorAsState(
-                if (selected) accent.onPrimary else accent.onSecondaryContainer,
-                label = "tabContent",
-            )
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(TabHeight)
-                    .clip(RoundedCornerShape(radius))
-                    .background(container)
-                    .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
-                    .padding(horizontal = 10.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = stringResource(label),
-                    fontSize = 13.5.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    color = content,
-                    maxLines = 1,
-                )
-                if (value == HubTab.UNREAD && unreadCount > 0) {
-                    Spacer(Modifier.width(6.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TabStripHeight)
+                .clip(RoundedCornerShape(50))
+                .background(track)
+                .selectableGroup(),
+        ) {
+            tabs.forEach { (value, label, icon) ->
+                val selected = value == tab
+                val container by animateColorAsState(if (selected) pill else Color.Transparent, label = "tabPill")
+                val content by animateColorAsState(if (selected) onPill else accent.onSurfaceVariant, label = "tabContent")
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .background(container)
+                        .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text = unreadCount.toString(),
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        text = stringResource(label),
+                        fontSize = 14.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         color = content,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(content.copy(alpha = if (selected) 0.22f else 0.10f))
-                            .padding(horizontal = 6.dp, vertical = 1.dp),
+                        maxLines = 1,
                     )
+                    if (value == HubTab.UNREAD && unreadCount > 0) {
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = unreadCount.toString(),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = content,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(content.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                        )
+                    }
                 }
             }
         }

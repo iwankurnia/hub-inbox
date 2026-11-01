@@ -109,10 +109,23 @@ data class HubExtraColors(
     /** Behind a row swiped towards read or unread. */
     val readReveal: Color,
     val onReadReveal: Color,
+    /** The neutral tab strip: the full-width track and the filled pill of the active tab (see HubTabs). */
+    val tabTrack: Color,
+    val tabSelected: Color,
 )
 
-internal val HubLightExtraColors = HubExtraColors(readReveal = Color(0xFFE3E5EA), onReadReveal = LightOnSurface)
-internal val HubDarkExtraColors = HubExtraColors(readReveal = DarkOutlineVariant, onReadReveal = DarkOnSurface)
+internal val HubLightExtraColors = HubExtraColors(
+    readReveal = Color(0xFFE3E5EA),
+    onReadReveal = LightOnSurface,
+    tabTrack = LightSurfaceContainerHigh,
+    tabSelected = Color(0xFFD3D6DE),
+)
+internal val HubDarkExtraColors = HubExtraColors(
+    readReveal = DarkOutlineVariant,
+    onReadReveal = DarkOnSurface,
+    tabTrack = DarkSurfaceContainerHigh,
+    tabSelected = Color(0xFF363B44),
+)
 
 internal val LocalHubColors = staticCompositionLocalOf { HubLightExtraColors }
 
@@ -132,4 +145,12 @@ object HubColors {
     val onReadReveal: Color
         @Composable @ReadOnlyComposable
         get() = LocalHubColors.current.onReadReveal
+
+    val tabTrack: Color
+        @Composable @ReadOnlyComposable
+        get() = LocalHubColors.current.tabTrack
+
+    val tabSelected: Color
+        @Composable @ReadOnlyComposable
+        get() = LocalHubColors.current.tabSelected
 }
