@@ -7,6 +7,8 @@ import android.graphics.drawable.Drawable
 import android.util.LruCache
 import androidx.core.graphics.drawable.toBitmap
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +19,7 @@ class AppIconCache @Inject constructor(@ApplicationContext ctx: Context) {
     private val packageManager = ctx.packageManager
     private val icons = LruCache<String, Drawable>(MAX_ICONS)
     private val labels = LruCache<String, String>(MAX_LABELS)
+    private val bitmaps = LruCache<String, Bitmap>(MAX_BITMAPS)
 
     /** The app's label, or [packageName] when the app is not installed; cached, as rows ask for it while composing. */
     fun label(packageName: String): String {
@@ -41,11 +44,34 @@ class AppIconCache @Inject constructor(@ApplicationContext ctx: Context) {
         }
     }
 
-    /** The icon drawn into a square bitmap of [sizePx], for widgets. */
-    fun iconBitmap(packageName: String, sizePx: Int): Bitmap? = icon(packageName)?.toBitmap(sizePx, sizePx)
+    /**
+     * The icon drawn into a square bitmap of [sizePx], drawn once per size and cached. Call it on the main
+     * thread only: launcher icons are usually adaptive icons with vector layers, and drawing those off the
+     * main thread can crash the renderer. Elsewhere use [iconBitmapOnMain].
+     */
+    fun iconBitmap(packageName: String, sizePx: Int): Bitmap? {
+        bitmaps.get(key(packageName, sizePx))?.let { return it }
+        val drawable = icon(packageName) ?: return null
+        return draw(packageName, sizePx, drawable)
+    }
+
+    /** [iconBitmap] from any thread: a cached bitmap straight away, otherwise drawn on the main thread. */
+    suspend fun iconBitmapOnMain(packageName: String, sizePx: Int): Bitmap? {
+        bitmaps.get(key(packageName, sizePx))?.let { return it }
+        val drawable = icon(packageName) ?: return null
+        return withContext(Dispatchers.Main.immediate) {
+            bitmaps.get(key(packageName, sizePx)) ?: draw(packageName, sizePx, drawable)
+        }
+    }
+
+    private fun draw(packageName: String, sizePx: Int, drawable: Drawable): Bitmap =
+        drawable.mutate().toBitmap(sizePx, sizePx).also { bitmaps.put(key(packageName, sizePx), it) }
+
+    private fun key(packageName: String, sizePx: Int) = "$packageName@$sizePx"
 
     private companion object {
         const val MAX_ICONS = 64
         const val MAX_LABELS = 64
+        const val MAX_BITMAPS = 128
     }
 }

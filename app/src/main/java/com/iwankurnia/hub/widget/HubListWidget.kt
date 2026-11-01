@@ -67,7 +67,7 @@ internal val HEADER_DP = 28.dp
 /** Height of one item row; the 3dp bar fills it. */
 internal val ROW_DP = 40.dp
 
-/** Extra height of the newest row for its Reply and Read chips. */
+/** Extra height of the newest row for its Read chip. */
 internal val CHIPS_DP = 26.dp
 
 /** Height the list widget needs for [rows] item rows: padding, header, the newest row with chips, the rest plain. */
@@ -88,7 +88,7 @@ private const val MAX_ROWS = 6
 /** The item a widget "Read" chip marks read. */
 val ItemIdKey = ActionParameters.Key<Long>("itemId")
 
-/** The multi-row widget: the newest unread items, with Reply and Read on the newest (spec 4.9). */
+/** The multi-row widget: the newest unread items, with Read on the newest (spec 4.9). */
 class HubListWidget : GlanceAppWidget() {
 
     override val sizeMode = SizeMode.Responsive(
@@ -100,23 +100,29 @@ class HubListWidget : GlanceAppWidget() {
         // One collection for the whole session: stateIn waits for the first state, then keeps following.
         // Room re-runs the count query on every change to the items table, so this also keeps a running
         // session current between pushes from GlanceWidgetRefresher.
-        val states = listStates(entryPoint.repository(), entryPoint.appIconCache(), context.dpToPx(ICON_DP))
+        val icons = entryPoint.appIconCache()
+        val states = listStates(entryPoint.repository(), context.dpToPx(ICON_DP), icons::iconBitmapOnMain)
             .stateIn(this)
         provideContent {
             val state by states.collectAsState()
             HubWidgetTheme { HubListContent(state) }
         }
     }
-
-    /** Icons are drawn into bitmaps off the main thread, once per update. */
-    private fun listStates(repository: HubRepository, icons: AppIconCache, iconPx: Int): Flow<ListState> =
-        repository.unreadCount().map { unread ->
-            withContext(Dispatchers.IO) {
-                val rows = repository.latestUnread(MAX_ROWS).map { item -> ListRow(item, icons.iconBitmap(item.packageName, iconPx)) }
-                ListState(unread, rows)
-            }
-        }
 }
+
+/**
+ * The list widget's state on every unread-count change: the query runs on IO, and each icon comes from
+ * [iconBitmap], which in production is [AppIconCache.iconBitmapOnMain] (icons are only drawn on the main thread).
+ */
+internal fun listStates(
+    repository: HubRepository,
+    iconPx: Int,
+    iconBitmap: suspend (packageName: String, sizePx: Int) -> Bitmap?,
+): Flow<ListState> =
+    repository.unreadCount().map { unread ->
+        val items = withContext(Dispatchers.IO) { repository.latestUnread(MAX_ROWS) }
+        ListState(unread, items.map { item -> ListRow(item, iconBitmap(item.packageName, iconPx)) })
+    }
 
 /**
  * Marks one item read from the widget's "Read" chip, clears its system notification (spec 4.1), then
@@ -138,9 +144,9 @@ class MarkReadAction(
     }
 }
 
-private data class ListState(val unread: Int, val rows: List<ListRow>)
+internal data class ListState(val unread: Int, val rows: List<ListRow>)
 
-private data class ListRow(val item: NotificationItem, val icon: Bitmap?)
+internal data class ListRow(val item: NotificationItem, val icon: Bitmap?)
 
 private const val ICON_DP = 28
 

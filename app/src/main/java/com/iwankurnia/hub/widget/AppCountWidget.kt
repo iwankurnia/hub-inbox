@@ -71,21 +71,21 @@ class AppCountWidget : GlanceAppWidget() {
         }
     }
 
-    /** Labels and icon bitmaps are looked up off the main thread, once per update. */
+    /** Labels are looked up on IO; icons are drawn on the main thread (see [AppIconCache.iconBitmapOnMain]). */
     private fun barStates(context: Context, repository: HubRepository, icons: AppIconCache): Flow<BarState> {
         val iconPx = context.dpToPx(ICON_DP)
         return repository.appCounts().map { counts ->
-            withContext(Dispatchers.IO) {
-                val apps = counts.sortedByDescending { it.lastSeenAt }.take(MAX_APPS).map { count ->
-                    AppTile(
-                        packageName = count.packageName,
-                        label = icons.label(count.packageName),
-                        unread = count.unread,
-                        icon = icons.iconBitmap(count.packageName, iconPx),
-                    )
-                }
-                BarState(total = counts.sumOf { it.unread }, apps = apps)
+            val top = counts.sortedByDescending { it.lastSeenAt }.take(MAX_APPS)
+            val labels = withContext(Dispatchers.IO) { top.map { icons.label(it.packageName) } }
+            val apps = top.zip(labels) { count, label ->
+                AppTile(
+                    packageName = count.packageName,
+                    label = label,
+                    unread = count.unread,
+                    icon = icons.iconBitmapOnMain(count.packageName, iconPx),
+                )
             }
+            BarState(total = counts.sumOf { it.unread }, apps = apps)
         }
     }
 }

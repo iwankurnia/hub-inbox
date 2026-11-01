@@ -12,6 +12,8 @@ import com.iwankurnia.hub.data.NoOpWidgetRefresher
 import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.data.RoomHubRepository
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.iwankurnia.hub.testing.InMemoryHubRepository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -87,5 +89,23 @@ class HubListWidgetTest {
 
         assertEquals(listOf("newest", "middle"), repository.latestUnread(2).map { it.title })
         db.close()
+    }
+
+    @Test
+    fun listStates_drawIconsThroughTheMainThreadVariant() = runTest {
+        val repository = InMemoryHubRepository()
+        repository.add(
+            InMemoryHubRepository.item(1, packageName = "com.whatsapp", postedAt = 200L),
+            InMemoryHubRepository.item(2, packageName = "com.google.android.gm", postedAt = 100L),
+        )
+        val asked = mutableListOf<Pair<String, Int>>()
+
+        val state = listStates(repository, iconPx = 56) { packageName, sizePx ->
+            asked += packageName to sizePx
+            null
+        }.first()
+
+        assertEquals(2, state.unread)
+        assertEquals(listOf("com.whatsapp" to 56, "com.google.android.gm" to 56), asked)
     }
 }

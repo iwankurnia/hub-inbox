@@ -3,9 +3,15 @@ package com.iwankurnia.hub.icon
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -37,5 +43,24 @@ class AppIconCacheTest {
 
         assertEquals("Chat", cache.label("com.example.chat"))
         assertEquals("com.example.gone", cache.label("com.example.gone"))
+    }
+
+    @Test
+    fun iconBitmap_isCachedPerSize() = runTest {
+        install("com.example.chat", "Chat")
+        shadowOf(context.packageManager).setApplicationIcon("com.example.chat", ColorDrawable(Color.BLUE))
+        val cache = AppIconCache(context)
+
+        val small = cache.iconBitmap("com.example.chat", 48)!!
+        val large = cache.iconBitmap("com.example.chat", 96)!!
+        assertEquals(48, small.width)
+        assertEquals(96, large.width)
+        assertNotSame(small, large)
+
+        // Drawn once per size: later lookups, sync or suspending, return the same bitmap without the package manager.
+        shadowOf(context.packageManager).deletePackage("com.example.chat")
+        assertSame(small, cache.iconBitmap("com.example.chat", 48))
+        assertSame(large, cache.iconBitmapOnMain("com.example.chat", 96))
+        assertNull(cache.iconBitmapOnMain("com.example.gone", 48))
     }
 }

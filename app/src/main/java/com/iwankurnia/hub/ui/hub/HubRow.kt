@@ -50,7 +50,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.drawable.toBitmap
 import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.ItemState
 import com.iwankurnia.hub.data.NotificationItem
@@ -218,13 +217,15 @@ fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, greyscale: B
     }
 }
 
-/** Loads the icon off the main thread; null until loaded or when the app is not installed. */
+/**
+ * Looks the icon up off the main thread and draws it on the main thread (vector icons are not safe to draw
+ * elsewhere); null until loaded or when the app is not installed.
+ */
 @Composable
 fun rememberAppIcon(packageName: String, iconCache: AppIconCache, sizePx: Int): ImageBitmap? {
     val icon by produceState<ImageBitmap?>(initialValue = null, packageName, sizePx) {
-        value = withContext(Dispatchers.IO) {
-            iconCache.icon(packageName)?.toBitmap(sizePx, sizePx)?.asImageBitmap()
-        }
+        withContext(Dispatchers.IO) { iconCache.icon(packageName) } ?: return@produceState
+        value = iconCache.iconBitmapOnMain(packageName, sizePx)?.asImageBitmap()
     }
     return icon
 }
