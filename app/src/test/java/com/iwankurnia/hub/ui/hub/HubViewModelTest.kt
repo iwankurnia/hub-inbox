@@ -189,6 +189,19 @@ class HubViewModelTest {
     }
 
     @Test
+    fun swipeRead_andReadSelected_cancelNotifications() = runTest(dispatcher) {
+        val live = RecordingLiveActions()
+        vm = HubViewModel(repo, live, flowOf(30))
+
+        vm.swipeRead(1)
+        assertEquals(listOf("k1"), live.cancelled)
+
+        vm.toggleSelect(3)
+        vm.readSelected()
+        assertEquals(listOf("k1", "k3"), live.cancelled)
+    }
+
+    @Test
     fun markAllRead_cancelsNotifications() = runTest(dispatcher) {
         val live = RecordingLiveActions()
         vm = HubViewModel(repo, live, flowOf(30))
