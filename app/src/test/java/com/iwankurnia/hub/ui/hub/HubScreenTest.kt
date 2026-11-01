@@ -102,19 +102,19 @@ class HubScreenTest {
     }
 
     @Test
-    fun overflow_opensSettings_andOffersMarkAllReadOnlyWithUnread() {
+    fun settingsIcon_opensSettings_andOverflowOffersMarkAllReadOnlyWithUnread() {
         var settingsOpened = false
         val vm = show(item(1, title = "Teguh", sortAt = todayNoon, isRead = false), onOpenSettings = { settingsOpened = true })
 
+        // Settings is its own bar icon again (the 1.0.2 bar Iwan asked back); the overflow only holds Mark all read.
+        compose.onNodeWithContentDescription("Settings").performClick()
+        assertTrue(settingsOpened)
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Mark all read").assertExists()
-        compose.onNodeWithText("Settings").performClick()
-        assertTrue(settingsOpened)
+        compose.onNodeWithText("Mark all read").performClick()
 
         compose.runOnIdle { vm.selectTab(HubTab.DELETED) }
-        compose.onNodeWithContentDescription("More options").performClick()
-        compose.onNodeWithText("Mark all read").assertDoesNotExist()
-        compose.onNodeWithText("Settings").assertExists()
+        compose.onNodeWithContentDescription("More options").assertDoesNotExist()
     }
 
     @Test

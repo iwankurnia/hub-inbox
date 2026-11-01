@@ -1,5 +1,6 @@
 package com.iwankurnia.hub.ui.theme
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -115,8 +116,15 @@ internal val HubDarkExtraColors = HubExtraColors(readReveal = DarkOutlineVariant
 
 internal val LocalHubColors = staticCompositionLocalOf { HubLightExtraColors }
 
-/** The current [HubExtraColors], light or dark with the system. */
+/** The scheme the top bar, tabs and date bands draw from: the wallpaper's with dynamic colour, else the neutral one. */
+internal val LocalHubAccent = staticCompositionLocalOf<ColorScheme> { HubLightColors }
+
+/** The current [HubExtraColors], light or dark with the system, and the accent scheme. */
 object HubColors {
+    val accent: ColorScheme
+        @Composable @ReadOnlyComposable
+        get() = LocalHubAccent.current
+
     val readReveal: Color
         @Composable @ReadOnlyComposable
         get() = LocalHubColors.current.readReveal

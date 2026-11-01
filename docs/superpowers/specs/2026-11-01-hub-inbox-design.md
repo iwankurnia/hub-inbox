@@ -120,15 +120,21 @@ posts is captured, stored locally and shown in one stream.
 
 ### 4.2 Hub screen (home)
 
-- Compact 56dp top bar **(Iwan, 2026-11-01: direction A)**: "Hub" on the
-  left; filter, search and an overflow (more_vert) on the right. The
-  overflow holds "Mark all read" (only while the current tab has unread
-  items) and "Settings"; there is no standalone settings icon.
-- Three top tabs: **All · Unread · Deleted** **(Iwan)**, left-aligned text
-  with a 2dp underline on the active one and the unread count as a plain
-  number after "Unread". Tab icons removed with direction A **(Iwan,
-  2026-11-01)**. Switched by tap; not swipeable, because row swipes are the
-  primary gesture **(my call, amended during implementation)**.
+- Tall top bar **(Iwan, 2026-11-01, after seeing 1.0.5: "I like old top
+  and tab bar more")**: "Hub" in displaySmall at the bottom left; filter,
+  search, settings and, only while the current tab has unread items, an
+  overflow holding "Mark all read". Background surfaceContainerLow of the
+  accent scheme (4.11). The compact 56dp bar of 1.0.5 is withdrawn.
+- Three top tabs: **All · Unread · Deleted** **(Iwan)** as an Android 16
+  connected button group **(Iwan, 2026-11-01: "for tab, let's do android
+  16 design", option A of docs/mockups/bar-and-tabs-android16.html, in
+  the direction A finish)**: 40dp segments with an 18dp icon and a 13.5sp
+  label, the selected one a 12dp-radius pill filled with the accent's
+  primary (near-black on the neutral scheme), the others 20dp tonal pills
+  in secondaryContainer; the unread count as a small translucent pill;
+  radius and colours animate on change. Switched by tap; not swipeable,
+  because row swipes are the primary gesture **(my call, amended during
+  implementation)**.
 - App filter **(Iwan, 2026-11-01: multi-select)**: a filter icon in the
   top bar opens a sheet with "Every app" then one row per app that has
   items, most recent first, each with its unread count. App rows tick and
@@ -273,12 +279,17 @@ Material structure, lose the noise. Reference:
   the Material defaults (delete reveal, Deleted banner). The read reveal is
   #E3E5EA / #2A2F36 with onSurface text. The snackbar keeps Material's
   inverse surface with a light-blue (dark-blue in dark mode) action.
-  Dynamic colour is honoured when switched on in Settings, off by default.
+  Dynamic colour, off by default, tints only the top bar, the tabs and the
+  date bands **(Iwan, 2026-11-01: "just top, date band and tab bar
+  applied, list still as is")**: those three draw from an accent scheme
+  (`HubColors.accent`), which is the wallpaper scheme when the option is on
+  and the neutral scheme otherwise; the Material scheme itself is always
+  neutral, so rows, sheets, search and settings never change.
 - Chrome: transparent status and navigation bars over the surface
   (edge to edge), dark icons on light, light on dark. 56dp top bars with a
   20sp semibold title; bar icons in the text colour, a step quieter.
   Select mode turns the bar surfaceContainerHigh with "N selected".
-- List: text tabs (13.5sp semibold, 2dp underline) over a hairline; date
+- List: button-group tabs (4.2) on surfaceContainerLow; date
   bands 13sp letter-spaced capitals (raised from 11sp, Iwan 2026-11-01); rows with a 3dp unread bar, 32dp bare
   icon (greyscale when read), 14sp title (bold when unread), 11.5sp time,
   12.5sp preview, 10dp vertical padding and 1dp hairlines between rows of

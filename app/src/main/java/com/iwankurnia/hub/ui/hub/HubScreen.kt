@@ -3,6 +3,18 @@ package com.iwankurnia.hub.ui.hub
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Inbox
+import androidx.compose.material.icons.rounded.MarkEmailUnread
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.ui.draw.clip
+import com.iwankurnia.hub.ui.theme.HubColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +39,6 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
@@ -42,8 +52,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,9 +62,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -239,13 +244,14 @@ fun HubScreen(
     }
 }
 
-private val TopBarHeight = 56.dp
-
 /** Bar icons sit a step quieter than the title (the mockup's #44474E on light). */
 private const val BarIconAlpha = 0.8f
 
-/** The compact 56dp bar: "Hub", then filter (dotted while a filter is on), search and the overflow. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The tall bar from 1.0.2 that Iwan asked back: "Hub" in displaySmall at the bottom left, then filter
+ * (dotted while a filter is on), search, settings and, while something can be marked read, the
+ * overflow. Colours come from [HubColors.accent] so dynamic colour tints it and nothing below.
+ */
 @Composable
 private fun HubTopBar(
     canMarkAllRead: Boolean,
@@ -256,105 +262,124 @@ private fun HubTopBar(
     onMarkAllRead: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    val colors = MaterialTheme.colorScheme
-    TopAppBar(
-        title = { Text(stringResource(R.string.hub_title), style = MaterialTheme.typography.titleLarge) },
-        actions = {
-            IconButton(onClick = onOpenFilter) {
-                BadgedBox(badge = { if (filterActive) Badge() }) {
-                    Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter))
-                }
+    val accent = HubColors.accent
+    val iconTint = accent.onSurface.copy(alpha = BarIconAlpha)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(accent.surfaceContainerLow)
+            .statusBarsPadding()
+            .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 0.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(
+            text = stringResource(R.string.hub_title),
+            style = MaterialTheme.typography.displaySmall,
+            color = accent.onSurface,
+            modifier = Modifier.weight(1f).padding(bottom = 4.dp),
+        )
+        IconButton(onClick = onOpenFilter) {
+            BadgedBox(badge = { if (filterActive) Badge(containerColor = accent.primary) }) {
+                Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter), tint = iconTint)
             }
-            IconButton(onClick = onOpenSearch) {
-                Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.action_search))
-            }
+        }
+        IconButton(onClick = onOpenSearch) {
+            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.action_search), tint = iconTint)
+        }
+        IconButton(onClick = onOpenSettings) {
+            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.action_settings), tint = iconTint)
+        }
+        if (canMarkAllRead) {
             Box {
                 IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
+                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more), tint = iconTint)
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    if (canMarkAllRead) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_mark_all_read)) },
-                            onClick = {
-                                menuOpen = false
-                                onMarkAllRead()
-                            },
-                        )
-                    }
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.action_settings)) },
+                        text = { Text(stringResource(R.string.action_mark_all_read)) },
                         onClick = {
                             menuOpen = false
-                            onOpenSettings()
+                            onMarkAllRead()
                         },
                     )
                 }
             }
-        },
-        expandedHeight = TopBarHeight,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colors.surface,
-            scrolledContainerColor = colors.surface,
-            titleContentColor = colors.onSurface,
-            actionIconContentColor = colors.onSurface.copy(alpha = BarIconAlpha),
-        ),
-    )
+        }
+    }
 }
 
-/** Left-aligned text tabs: the active one in onSurface over a 2dp line, the unread count as a plain number. */
+private val TabHeight = 40.dp
+private val TabPillRadius = 20.dp
+private val TabSelectedRadius = 12.dp
+
+/**
+ * Android 16's connected button group as the tab strip (Iwan chose it over primary tabs, 2026-11-01,
+ * "like the one you proposed before" meaning the direction A finish): the selected tab is a filled,
+ * squarer pill in the accent's primary (near-black on the neutral scheme), the others tonal pills.
+ * The corner radius and colours animate so a change of tab morphs rather than snaps.
+ */
 @Composable
 private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
-    val colors = MaterialTheme.colorScheme
+    val accent = HubColors.accent
     val tabs = listOf(
-        HubTab.ALL to R.string.tab_all,
-        HubTab.UNREAD to R.string.tab_unread,
-        HubTab.DELETED to R.string.tab_deleted,
+        Triple(HubTab.ALL, R.string.tab_all, Icons.Rounded.Inbox),
+        Triple(HubTab.UNREAD, R.string.tab_unread, Icons.Rounded.MarkEmailUnread),
+        Triple(HubTab.DELETED, R.string.tab_deleted, Icons.Rounded.Delete),
     )
-    Column(modifier = Modifier.fillMaxWidth().background(colors.surface)) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp).selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(22.dp),
-        ) {
-            tabs.forEach { (value, label) ->
-                val selected = value == tab
-                val indicator = colors.onSurface
-                Row(
-                    modifier = Modifier
-                        .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
-                        .drawBehind {
-                            if (selected) {
-                                val height = 2.dp.toPx()
-                                drawRoundRect(
-                                    color = indicator,
-                                    topLeft = Offset(0f, size.height - height),
-                                    size = Size(size.width, height),
-                                    cornerRadius = CornerRadius(height, height),
-                                )
-                            }
-                        }
-                        .padding(start = 2.dp, end = 2.dp, top = 10.dp, bottom = 11.dp),
-                ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(accent.surfaceContainerLow)
+            .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        tabs.forEach { (value, label, icon) ->
+            val selected = value == tab
+            val radius by animateDpAsState(if (selected) TabSelectedRadius else TabPillRadius, label = "tabRadius")
+            val container by animateColorAsState(
+                if (selected) accent.primary else accent.secondaryContainer,
+                label = "tabContainer",
+            )
+            val content by animateColorAsState(
+                if (selected) accent.onPrimary else accent.onSecondaryContainer,
+                label = "tabContent",
+            )
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(TabHeight)
+                    .clip(RoundedCornerShape(radius))
+                    .background(container)
+                    .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
+                    .padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(label),
+                    fontSize = 13.5.sp,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = content,
+                    maxLines = 1,
+                )
+                if (value == HubTab.UNREAD && unreadCount > 0) {
+                    Spacer(Modifier.width(6.dp))
                     Text(
-                        text = stringResource(label),
-                        fontSize = 13.5.sp,
+                        text = unreadCount.toString(),
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
-                        modifier = Modifier.alignByBaseline(),
+                        color = content,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(content.copy(alpha = if (selected) 0.22f else 0.10f))
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
                     )
-                    if (value == HubTab.UNREAD && unreadCount > 0) {
-                        Text(
-                            text = unreadCount.toString(),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = colors.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 5.dp).alignByBaseline(),
-                        )
-                    }
                 }
             }
         }
-        HorizontalDivider(thickness = 1.dp, color = colors.outlineVariant)
     }
 }
 
@@ -477,11 +502,12 @@ private fun bandTime(item: NotificationItem): Long =
 /** A grey strip: the band label in letter-spaced capitals on the left, the short date on the right. */
 @Composable
 private fun BandHeader(band: DateBand) {
-    val colour = MaterialTheme.colorScheme.onSurfaceVariant
+    val accent = HubColors.accent
+    val colour = accent.onSurfaceVariant
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .background(accent.surfaceContainer)
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
