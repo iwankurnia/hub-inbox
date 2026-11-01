@@ -49,6 +49,7 @@ class HubListenerServiceTest {
             it.repository = repository
             it.prefs = prefs
             it.registry = registry
+            it.shadeClearDelayMs = 0 // The alert delay is covered by its own test.
         }
         // Stands in for the connected listener's cancelNotification.
         registry.canceller = { cancelled += it }
@@ -236,6 +237,19 @@ class HubListenerServiceTest {
         assertFalse(registry.openContent(readInHub.key))
         assertFalse(registry.openContent(swiped.key))
         assertFalse(registry.openContent(cleared.key))
+    }
+
+    @Test
+    fun posted_withClearShade_waitsForTheAlertBeforeCancelling() {
+        runBlocking { prefs.setClearShade(true) }
+        service.shadeClearDelayMs = 300
+        val posted = chat(1)
+        service.onNotificationPosted(posted, null)
+        settle()
+
+        assertTrue("cancelled before the alert could play", cancelled.isEmpty())
+        Thread.sleep(700)
+        assertEquals(listOf(posted.key), cancelled)
     }
 
     @Test

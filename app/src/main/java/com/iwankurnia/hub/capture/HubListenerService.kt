@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -48,6 +49,14 @@ class HubListenerService : NotificationListenerService() {
 
     /** Keys Hub cancelled for "Keep the status bar clear"; their removal must not drop the content intent. */
     private val clearedForShade: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    /**
+     * How long a notification stays in the shade before "Keep the status bar clear" removes it. Android
+     * stops the sound and vibration and drops the heads-up banner the moment the notification is
+     * cancelled, so the cancel waits until the alert has played and the banner (about five seconds)
+     * has gone. Tests set it to zero. (Iwan: "give enough time so that sound and banner played first".)
+     */
+    internal var shadeClearDelayMs: Long = SHADE_CLEAR_DELAY_MS
 
     init {
         scope.launch {
@@ -140,7 +149,7 @@ class HubListenerService : NotificationListenerService() {
             if (drop != NotificationFilter.Drop.NONE) {
                 // Group summaries and silent posts never become items, but with the option on they must
                 // not linger in the shade either (WhatsApp's "3 new messages" summary, for one).
-                if (clearShade && drop.clearable) clearFromShade(sbn.key)
+                if (clearShade && drop.clearable) clearFromShadeLater(sbn.key)
                 return@enqueue
             }
             val captured = mapNotification(sbn, this)
@@ -148,7 +157,19 @@ class HubListenerService : NotificationListenerService() {
             repository.capture(captured)
             // Every accepted post is cleared, including an identical re-post that changed nothing in Hub:
             // chat apps re-post the same conversation on every message.
-            if (clearShade) clearFromShade(sbn.key)
+            if (clearShade) clearFromShadeLater(sbn.key)
+        }
+    }
+
+    /** Cancels after [shadeClearDelayMs], off the event queue so the wait never holds up later posts. */
+    private fun clearFromShadeLater(key: String) {
+        if (shadeClearDelayMs <= 0) {
+            clearFromShade(key)
+            return
+        }
+        scope.launch {
+            delay(shadeClearDelayMs)
+            clearFromShade(key)
         }
     }
 
@@ -165,6 +186,8 @@ class HubListenerService : NotificationListenerService() {
     }
 
     private companion object {
+        /** Sound, vibration and the heads-up banner (about five seconds) have finished by then. */
+        const val SHADE_CLEAR_DELAY_MS = 6_000L
         const val TAG = "HubListener"
     }
 }

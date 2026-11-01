@@ -97,7 +97,7 @@
     <string name="settings_hide_silent">Hide silent notifications</string>
     <string name="settings_hide_silent_summary">Ones Android shows silently</string>
     <string name="settings_clear_shade">Keep the status bar clear</string>
-    <string name="settings_clear_shade_summary">Hub removes each notification from the shade as soon as it has captured it</string>
+    <string name="settings_clear_shade_summary">Hub removes each notification from the shade once its sound and banner have played</string>
     <string name="settings_unread_badge">Unread badge on the app icon</string>
     <string name="settings_unread_badge_summary">Shown through a silent Hub notification</string>
     <string name="settings_section_system">System</string>
