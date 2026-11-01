@@ -1,0 +1,107 @@
+
+<style>
+  .grid { display:flex; gap: 26px; flex-wrap: wrap; justify-content:center; margin: 18px 0 30px; }
+  .shot { width: 360px; cursor:pointer; border-radius: 18px; padding: 10px; border: 2px solid transparent; }
+  .shot.selected { border-color:#0B57D0; background: rgba(11,87,208,.06); }
+  .shot h3 { margin: 12px 0 2px; font-size: 16px; } .shot p { margin:0; opacity:.8; font-size: 13.5px; }
+  .phone { width: 360px; height: 720px; border-radius: 40px; overflow:hidden; position:relative; box-shadow: 0 12px 40px rgba(0,0,0,.3), inset 0 0 0 8px #111; font-family: "Google Sans", Roboto, system-ui, sans-serif; }
+  .sb { height: 44px; display:flex; justify-content:space-between; align-items:center; padding: 0 28px; font-size: 13px; font-weight: 500; }
+  .ai { border-radius: 50%; display:flex; align-items:center; justify-content:center; flex:none; }
+  .ai.txt { color:#fff; font-weight:700; font-size: 10px; letter-spacing:.3px; }
+  .row { display:flex; gap: 12px; align-items:center; padding: 10px 16px 10px 12px; border-left: 3px solid transparent; }
+  .body { flex:1; min-width:0; } .l1 { display:flex; justify-content:space-between; gap: 8px; align-items:baseline; }
+  .name { font-size: 14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .time { font-size: 11.5px; flex:none; }
+  .msg { font-size: 12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top: 1px; }
+  .homebar { position:absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 4px; border-radius: 2px; opacity:.6; z-index: 9; }
+  .ms { font-family:'Material Symbols Rounded'; font-size: 22px; line-height:1; vertical-align:middle; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .ms.fill { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+
+  /* A: tightened Material, light */
+  .A { background:#FBFBFE; color:#1A1C1E; }
+  .A .sb { color:#1A1C1E; }
+  .A .bar { height: 56px; display:flex; align-items:center; padding: 0 8px 0 20px; gap: 14px; }
+  .A .bar .t { font-size: 20px; font-weight: 600; flex:1; letter-spacing:-.2px; }
+  .A .bar .ms { color:#44474E; margin: 0 6px; }
+  .A .tabs { display:flex; padding: 0 16px; gap: 22px; border-bottom: 1px solid #E2E3EA; }
+  .A .tab { padding: 10px 2px 11px; font-size: 13.5px; font-weight: 600; color:#6B6F78; position:relative; }
+  .A .tab.on { color:#1A1C1E; } .A .tab.on::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height: 2px; background:#1A1C1E; border-radius: 2px 2px 0 0; }
+  .A .tab .n { font-weight: 500; color:#6B6F78; margin-left: 5px; font-size: 12px; }
+  .A .band { background:#F2F3F8; color:#6B6F78; font-size: 11px; letter-spacing:.8px; text-transform:uppercase; font-weight: 600; padding: 7px 16px; display:flex; justify-content:space-between; }
+  .A .band span:last-child { text-transform:none; letter-spacing:0; font-weight: 500; }
+  .A .row { border-bottom: 1px solid #EEEFF4; } .A .row.unread { border-left-color:#1A1C1E; }
+  .A .name { color:#1A1C1E; } .A .unread .name { font-weight: 700; }
+  .A .time { color:#8A8E97; } .A .unread .time { color:#1A1C1E; font-weight:600; }
+  .A .msg { color:#6B6F78; } .A .unread .msg { color:#2C2F35; }
+  .A .homebar { background:#1A1C1E; }
+
+  /* B: BB10 dark with bottom action bar */
+  .B { background:#000; color:#FFF; }
+  .B .sb { color:#FFF; }
+  .B .bar { height: 48px; display:flex; align-items:center; padding: 0 16px; gap: 10px; background:#000; }
+  .B .bar .t { font-size: 17px; font-weight: 600; flex:1; }
+  .B .bar .cnt { font-size: 12px; color:#8E9199; }
+  .B .tabs { display:flex; padding: 0 16px; gap: 20px; background:#000; border-bottom: 1px solid #1D2126; }
+  .B .tab { padding: 8px 2px 10px; font-size: 12.5px; font-weight: 600; letter-spacing:.6px; text-transform:uppercase; color:#8E9199; position:relative; }
+  .B .tab.on { color:#2FA8FF; } .B .tab.on::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height: 2px; background:#2FA8FF; }
+  .B .band { background:#15181C; color:#A9ADB5; font-size: 11.5px; font-weight: 600; padding: 6px 16px; display:flex; justify-content:space-between; }
+  .B .band span:last-child { font-weight: 400; color:#8E9199; }
+  .B .row { border-bottom: 1px solid #15181C; background:#000; }
+  .B .row.unread { border-left-color:#2FA8FF; }
+  .B .name { color:#E6E8EC; } .B .unread .name { color:#FFF; font-weight: 700; }
+  .B .time { color:#8E9199; } .B .unread .time { color:#2FA8FF; font-weight: 600; }
+  .B .msg { color:#9AA0A8; } .B .unread .msg { color:#D6D9DE; }
+  .B .abar { position:absolute; left:0; right:0; bottom:0; height: 72px; background:#0B0D10; border-top: 1px solid #1D2126; display:flex; justify-content:space-around; align-items:center; padding-bottom: 10px; }
+  .B .abar .act { display:flex; flex-direction:column; align-items:center; gap: 3px; font-size: 10.5px; color:#C3C6CF; letter-spacing:.3px; }
+  .B .abar .ms { color:#E6E8EC; font-size: 24px; }
+  .B .homebar { background:#E6E8EC; }
+
+  /* C: dark Material with bottom navigation (Expressive) */
+  .C { background:#0F1114; color:#E6E8EC; }
+  .C .sb { color:#E6E8EC; }
+  .C .bar { height: 56px; display:flex; align-items:center; padding: 0 8px 0 20px; gap: 10px; }
+  .C .bar .t { font-size: 22px; font-weight: 500; flex:1; }
+  .C .bar .ms { color:#C3C6CF; margin: 0 6px; }
+  .C .seg { margin: 4px 16px 10px; height: 40px; border-radius: 20px; background:#1B1E23; display:flex; padding: 3px; }
+  .C .seg div { flex:1; display:flex; align-items:center; justify-content:center; gap: 6px; font-size: 13px; font-weight: 600; color:#9AA0A8; border-radius: 17px; }
+  .C .seg div.on { background:#2A3A52; color:#CFE1FF; }
+  .C .seg .n { font-size: 11px; background:#3C4A60; color:#CFE1FF; border-radius: 9px; padding: 1px 6px; }
+  .C .band { color:#9AA0A8; font-size: 11px; letter-spacing:.8px; text-transform:uppercase; font-weight: 700; padding: 10px 16px 4px; display:flex; justify-content:space-between; }
+  .C .band span:last-child { text-transform:none; letter-spacing:0; font-weight: 500; }
+  .C .row { border-bottom: 1px solid #1B1E23; }
+  .C .row.unread { border-left-color:#8AB4F8; }
+  .C .name { color:#E6E8EC; } .C .unread .name { font-weight: 700; color:#FFF; }
+  .C .time { color:#8E9199; } .C .unread .time { color:#8AB4F8; font-weight:600; }
+  .C .msg { color:#9AA0A8; } .C .unread .msg { color:#D6D9DE; }
+  .C .nav { position:absolute; left:0; right:0; bottom:0; height: 80px; background:#15181C; display:flex; justify-content:space-around; align-items:center; padding-bottom: 12px; }
+  .C .nav .d { display:flex; flex-direction:column; align-items:center; gap: 4px; font-size: 12px; font-weight: 500; color:#C3C6CF; }
+  .C .nav .pill { width: 60px; height: 32px; border-radius: 16px; display:flex; align-items:center; justify-content:center; }
+  .C .nav .d.on .pill { background:#2A3A52; } .C .nav .d.on { color:#CFE1FF; }
+  .C .nav .ms { color:#E6E8EC; }
+  .C .homebar { background:#E6E8EC; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap">
+
+<h2>Three ways to get the BB10 feel inside Android</h2>
+<p class="subtitle">Same notifications in all three. Click the one closest to what you want, then tell me what to change. Dark follows the system in every option; A is shown light and B/C dark on purpose.</p>
+<div class="grid">
+  <div class="shot" data-choice="A" onclick="toggleSelect(this)"><div class="phone A">
+ <div class="sb"><span>09:41</span><span>▲ ▮ 82%</span></div>
+ <div class="bar"><div class="t">Hub</div><span class="ms ">filter_list</span><span class="ms ">search</span><span class="ms ">more_vert</span></div>
+ <div class="tabs"><div class="tab on">All</div><div class="tab">Unread<span class="n">6</span></div><div class="tab">Deleted</div></div>
+ <div class="band"><span>Today</span><span>Sun 1 Nov</span></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Teguh</span><span class="time">09:40</span></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Jira (via Gmail)</span><span class="time">09:12</span></div><div class="msg">[IDH-2020] Okky commented: Looks good, one question on the audience claim</div></div></div><div class="row  "><div class="ai txt" style="width:32px;height:32px;background:#0060AF">BCA</div><div class="body"><div class="l1"><span class="name">BCA mobile</span><span class="time">08:58</span></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Matthew · Engineering</span><span class="time">08:40</span></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div></div></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">HMS Dev Group</span><span class="time">08:20</span></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Bitbucket</span><span class="time">08:05</span></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div><div class="band"><span>Yesterday</span><span>Sat 31 Oct</span></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#00B14F"><img src="https://cdn.simpleicons.org/grab/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Grab</span><span class="time">18:31</span></div><div class="msg">Your driver Budi has arrived. White Avanza, B 1234 XYZ.</div></div></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Rina (Family)</span><span class="time">07:55</span></div><div class="msg">Jangan lupa beli susu ya</div></div></div>
+ <div class="homebar"></div></div><h3>A · Tightened Material</h3><p>Keep the structure, lose the noise: compact title bar, monochrome icons, restrained accent (black unread bar instead of blue), small-caps date bands, tighter rows. Quietly professional.</p></div>
+  <div class="shot" data-choice="B" onclick="toggleSelect(this)"><div class="phone B">
+ <div class="sb"><span>09:41</span><span>▲ ▮ 82%</span></div>
+ <div class="bar"><div class="t">Hub</div><div class="cnt">6 unread · 5 apps</div></div>
+ <div class="tabs"><div class="tab on">All</div><div class="tab">Unread</div><div class="tab">Deleted</div></div>
+ <div class="band"><span>Today</span><span>Sun 1 Nov</span></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Teguh</span><span class="time">09:40</span></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Jira (via Gmail)</span><span class="time">09:12</span></div><div class="msg">[IDH-2020] Okky commented: Looks good, one question on the audience claim</div></div></div><div class="row  "><div class="ai txt" style="width:32px;height:32px;background:#0060AF">BCA</div><div class="body"><div class="l1"><span class="name">BCA mobile</span><span class="time">08:58</span></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Matthew · Engineering</span><span class="time">08:40</span></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div></div></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">HMS Dev Group</span><span class="time">08:20</span></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Bitbucket</span><span class="time">08:05</span></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div><div class="band"><span>Yesterday</span><span>Sat 31 Oct</span></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#00B14F"><img src="https://cdn.simpleicons.org/grab/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Grab</span><span class="time">18:31</span></div><div class="msg">Your driver Budi has arrived. White Avanza, B 1234 XYZ.</div></div></div>
+ <div class="abar"><div class="act"><span class="ms ">filter_list</span>Filter</div><div class="act"><span class="ms ">search</span>Search</div><div class="act"><span class="ms ">done_all</span>Read all</div><div class="act"><span class="ms ">settings</span>Settings</div></div>
+ <div class="homebar"></div></div><h3>B · BB10 dark with action bar</h3><p>Pure black list, white bold senders, BB blue for unread, uppercase tabs, and the BB10 signature: an action bar along the bottom (Filter · Search · Read all · Settings). Material components underneath.</p></div>
+  <div class="shot" data-choice="C" onclick="toggleSelect(this)"><div class="phone C">
+ <div class="sb"><span>09:41</span><span>▲ ▮ 82%</span></div>
+ <div class="bar"><div class="t">Hub</div><span class="ms ">filter_list</span><span class="ms ">search</span></div>
+ <div class="seg"><div class="on">All</div><div>Unread <span class="n">6</span></div><div>Deleted</div></div>
+ <div class="band"><span>Today</span><span>Sun 1 Nov</span></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#25D366"><img src="https://cdn.simpleicons.org/whatsapp/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Teguh</span><span class="time">09:40</span></div><div class="msg">PR #1616 sudah saya rebase, bisa dicek lagi?</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Jira (via Gmail)</span><span class="time">09:12</span></div><div class="msg">[IDH-2020] Okky commented: Looks good, one question on the audience claim</div></div></div><div class="row  "><div class="ai txt" style="width:32px;height:32px;background:#0060AF">BCA</div><div class="body"><div class="l1"><span class="name">BCA mobile</span><span class="time">08:58</span></div><div class="msg">Transaksi berhasil Rp 45.000 ke GRAB*JAKARTA</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#6264A7"><img src="https://cdn.simpleicons.org/microsoftteams/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Matthew · Engineering</span><span class="time">08:40</span></div><div class="msg">@Iwan can we move the push-assignment demo to Thursday?</div></div></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#2AABEE"><img src="https://cdn.simpleicons.org/telegram/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">HMS Dev Group</span><span class="time">08:20</span></div><div class="msg">Okky: deploy staging jam 10 ya</div></div></div><div class="row unread "><div class="ai" style="width:32px;height:32px;background:#EA4335"><img src="https://cdn.simpleicons.org/gmail/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Bitbucket</span><span class="time">08:05</span></div><div class="msg">PR #1616: Okky approved your pull request</div></div></div><div class="band"><span>Yesterday</span><span>Sat 31 Oct</span></div><div class="row  "><div class="ai" style="width:32px;height:32px;background:#00B14F"><img src="https://cdn.simpleicons.org/grab/ffffff" width="18"></div><div class="body"><div class="l1"><span class="name">Grab</span><span class="time">18:31</span></div><div class="msg">Your driver Budi has arrived. White Avanza, B 1234 XYZ.</div></div></div>
+ <div class="nav"><div class="d on"><div class="pill"><span class="ms fill">inbox</span></div>Hub</div><div class="d"><div class="pill"><span class="ms ">apps</span></div>Apps</div><div class="d"><div class="pill"><span class="ms ">settings</span></div>Settings</div></div>
+ <div class="homebar"></div></div><h3>C · Dark Material 3 Expressive</h3><p>Dark surfaces rather than pure black, a segmented All/Unread/Deleted control, and an Android bottom navigation (Hub · Apps · Settings). BB10 mood, current-Android shape.</p></div>
+</div>
