@@ -300,7 +300,8 @@ Material structure, lose the noise. Reference:
   bands 13sp letter-spaced capitals (raised from 11sp, Iwan 2026-11-01); rows with a 3dp unread bar, 32dp bare
   icon (greyscale when read), 14sp title (bold when unread), 11.5sp time,
   12.5sp preview, 10dp vertical padding and 1dp hairlines between rows of
-  one band. Selected rows and the tick tile use surfaceContainerHigh.
+  one band, inset 59dp to the text column so the icon column stays clear,
+  as in the BB10 Hub **(Iwan, 2026-11-01)**. Selected rows and the tick tile use surfaceContainerHigh.
 - Settings: uppercase letter-spaced section labels, 16dp-radius
   surfaceContainer groups, switches with an onSurface track. Onboarding,
   the filter sheet and search share the palette; the filter sheet shows

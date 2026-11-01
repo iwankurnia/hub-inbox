@@ -60,6 +60,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private val IconSize = 32.dp
+
+/** Where the text column starts: the 3dp unread bar, 12dp padding, the icon and the 12dp gap after it. */
+private val DividerInset = 3.dp + 12.dp + IconSize + 12.dp
 private val IconShape = RoundedCornerShape(8.dp)
 
 /**
@@ -150,7 +153,14 @@ fun HubRow(
                 }
             }
         }
-        if (showDivider) HorizontalDivider(thickness = 1.dp, color = colors.outlineVariant)
+        // Inset to the text column, as in the BB10 Hub: the icon column stays clear (Iwan, 2026-11-01).
+        if (showDivider) {
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = colors.outlineVariant,
+                modifier = Modifier.padding(start = DividerInset),
+            )
+        }
     }
 }
 
