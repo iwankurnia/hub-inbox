@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.iwankurnia.hub.data.AppCount
 import com.iwankurnia.hub.data.AppPref
 import com.iwankurnia.hub.data.HubPrefs
+import com.iwankurnia.hub.data.WidgetRefresher
 import com.iwankurnia.hub.testing.InMemoryHubRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -38,6 +40,10 @@ class SettingsViewModelTest {
     private val repository = InMemoryHubRepository()
     private lateinit var prefs: HubPrefs
     private lateinit var vm: SettingsViewModel
+    private var refreshes = 0
+    private val refresher = object : WidgetRefresher {
+        override suspend fun refresh() { refreshes++ }
+    }
 
     @Before
     fun setUp() {
@@ -47,7 +53,7 @@ class SettingsViewModelTest {
             AppCount("com.whatsapp", unread = 2, total = 4, lastSeenAt = 300),
             AppCount("com.google.android.gm", unread = 0, total = 6, lastSeenAt = 200),
         )
-        vm = SettingsViewModel(repository, prefs)
+        vm = SettingsViewModel(repository, prefs, refresher)
     }
 
     @After
@@ -96,5 +102,11 @@ class SettingsViewModelTest {
         vm.setHideSilent(false).join()
 
         assertFalse(prefs.hideSilent.first())
+    }
+    @Test
+    fun setDynamicColor_redrawsTheWidgets() = runBlocking {
+        vm.setDynamicColor(true).join()
+        assertEquals(1, refreshes)
+        assertTrue(prefs.dynamicColor.first())
     }
 }

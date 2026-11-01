@@ -51,7 +51,8 @@ sideloaded debug build; there is no Play Store listing.
 Settings also offers "Keep the status bar clear", which removes each
 notification from the shade ten seconds after it arrives, once its sound
 and heads-up banner have played. "Dynamic colour" tints only the top bar,
-the tabs and the date bands from the wallpaper; the list stays neutral.
+the tabs, the date bands and the two widgets from the wallpaper; the list
+stays neutral.
 
 ## Tests
 

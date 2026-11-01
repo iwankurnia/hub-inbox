@@ -306,9 +306,13 @@ Material structure, lose the noise. Reference:
   surfaceContainer groups, switches with an onSurface track. Onboarding,
   the filter sheet and search share the palette; the filter sheet shows
   unread counts as plain numbers.
-- Widgets: always the neutral scheme, no blue anywhere: header and unread
-  bar in onSurface, count pill surfaceContainerHigh, per-app badges
-  onSurface with surface text. The launcher icon is unchanged.
+- Widgets: follow the "Dynamic colour" setting **(Iwan, 2026-11-01:
+  "make the widget follow theme color")**: the wallpaper scheme when it
+  is on (Android 12+), the neutral scheme otherwise. Accents come from
+  primary / primaryContainer (unread bar and per-app badges in primary,
+  count pill and Read chip in primaryContainer), which on the neutral
+  scheme are the text colour and the high surface container, so the
+  widgets stay monochrome there. The launcher icon is unchanged.
 - Icons: Material Symbols, rounded style **(Iwan: proper icons, not
   emoji)**: search, settings, more_vert, arrow_back, close, done_all,
   mark_email_read, delete, delete_sweep, open_in_new, chevron_right,

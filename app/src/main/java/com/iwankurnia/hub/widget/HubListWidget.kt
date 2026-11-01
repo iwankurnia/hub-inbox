@@ -103,9 +103,11 @@ class HubListWidget : GlanceAppWidget() {
         val icons = entryPoint.appIconCache()
         val states = listStates(entryPoint.repository(), context.dpToPx(ICON_DP), icons::iconBitmapOnMain)
             .stateIn(this)
+        val dynamicColor = entryPoint.prefs().dynamicColor.stateIn(this)
         provideContent {
             val state by states.collectAsState()
-            HubWidgetTheme { HubListContent(state) }
+            val dynamic by dynamicColor.collectAsState()
+            HubWidgetTheme(dynamicColor = dynamic) { HubListContent(state) }
         }
     }
 }
@@ -198,11 +200,11 @@ private fun Header(unread: Int) {
         if (unread > 0) {
             Text(
                 text = countLabel(unread),
-                // primaryContainer is the neutral high surface container (see HubWidgetTheme).
+                // primaryContainer: the neutral high surface container, or the wallpaper tint (see HubWidgetTheme).
                 modifier = GlanceModifier.background(GlanceTheme.colors.primaryContainer)
                     .cornerRadius(10.dp)
                     .padding(horizontal = 7.dp, vertical = 2.dp),
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold),
             )
             Spacer(modifier = GlanceModifier.width(8.dp))
         }
@@ -230,7 +232,7 @@ private fun ItemRow(row: ListRow, showActions: Boolean) {
         Box(
             modifier = GlanceModifier.width(3.dp)
                 .fillMaxHeight()
-                .background(GlanceTheme.colors.onSurface)
+                .background(GlanceTheme.colors.primary)
                 .cornerRadius(2.dp),
         ) {}
         Spacer(modifier = GlanceModifier.width(8.dp))
@@ -302,7 +304,7 @@ private fun Chip(label: String, modifier: GlanceModifier) {
         modifier = modifier.background(GlanceTheme.colors.primaryContainer)
             .cornerRadius(10.dp)
             .padding(horizontal = 10.dp, vertical = 3.dp),
-        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold),
+        style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold),
     )
 }
 

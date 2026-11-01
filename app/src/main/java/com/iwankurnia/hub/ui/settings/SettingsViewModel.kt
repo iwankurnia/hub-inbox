@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.iwankurnia.hub.data.AppCount
 import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.data.HubRepository
+import com.iwankurnia.hub.data.WidgetRefresher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val repository: HubRepository,
     private val prefs: HubPrefs,
+    private val widgets: WidgetRefresher,
 ) : ViewModel() {
 
     /**
@@ -58,7 +60,11 @@ class SettingsViewModel @Inject constructor(
 
     fun setHideSilent(value: Boolean): Job = viewModelScope.launch { prefs.setHideSilent(value) }
 
-    fun setDynamicColor(value: Boolean): Job = viewModelScope.launch { prefs.setDynamicColor(value) }
+    /** The widgets follow this setting too, so they are redrawn even when no widget session is running. */
+    fun setDynamicColor(value: Boolean): Job = viewModelScope.launch {
+        prefs.setDynamicColor(value)
+        widgets.refresh()
+    }
 
     /** Suspends until written, so the caller can leave the screen safely afterwards. */
     suspend fun completeOnboarding() {

@@ -65,9 +65,11 @@ class AppCountWidget : GlanceAppWidget() {
         // One collection for the whole session: stateIn waits for the first state, then keeps following.
         // appCounts is a Room flow, so a running session also follows changes between refreshes.
         val states = barStates(context, entryPoint.repository(), entryPoint.appIconCache()).stateIn(this)
+        val dynamicColor = entryPoint.prefs().dynamicColor.stateIn(this)
         provideContent {
             val state by states.collectAsState()
-            HubWidgetTheme { AppCountContent(state) }
+            val dynamic by dynamicColor.collectAsState()
+            HubWidgetTheme(dynamicColor = dynamic) { AppCountContent(state) }
         }
     }
 
@@ -210,13 +212,13 @@ private fun Badge(unread: Int) {
     ) {
         Box(
             modifier = (if (singleDigit) GlanceModifier.fillMaxSize() else GlanceModifier.fillMaxHeight().padding(horizontal = 4.dp))
-                .background(GlanceTheme.colors.onSurface)
+                .background(GlanceTheme.colors.primary)
                 .cornerRadius(7.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = label,
-                style = TextStyle(color = GlanceTheme.colors.surface, fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(color = GlanceTheme.colors.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold),
             )
         }
     }

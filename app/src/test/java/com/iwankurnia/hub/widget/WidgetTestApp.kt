@@ -3,6 +3,8 @@ package com.iwankurnia.hub.widget
 import android.app.Application
 import com.iwankurnia.hub.capture.LiveActions
 import com.iwankurnia.hub.data.HubRepository
+import com.iwankurnia.hub.data.HubPrefs
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.iwankurnia.hub.icon.AppIconCache
 import com.iwankurnia.hub.testing.RecordingLiveActions
 import dagger.hilt.internal.GeneratedComponent
@@ -17,11 +19,13 @@ class WidgetTestApp : Application(), GeneratedComponentManager<Any> {
 
     val repository = RecordingHubRepository()
     val liveActions = RecordingLiveActions()
+    val prefs by lazy { HubPrefs(PreferenceDataStoreFactory.create { filesDir.resolve("widget_test_prefs.preferences_pb") }) }
 
     private val component = object : GeneratedComponent, WidgetEntryPoint {
         override fun repository(): HubRepository = this@WidgetTestApp.repository
         override fun appIconCache(): AppIconCache = AppIconCache(this@WidgetTestApp)
         override fun liveActions(): LiveActions = this@WidgetTestApp.liveActions
+        override fun prefs(): HubPrefs = this@WidgetTestApp.prefs
     }
 
     override fun generatedComponent(): Any = component
