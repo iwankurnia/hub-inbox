@@ -19,8 +19,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -43,15 +45,26 @@ class UnreadBadge internal constructor(
         this(context, repository, prefs.unreadBadge, CoroutineScope(SupervisorJob() + Dispatchers.Default))
 
     private val started = AtomicBoolean(false)
+    private val refreshes = MutableStateFlow(0)
 
     /** Starts following the count; later calls do nothing, so the app and the listener may both call it. */
     fun start() {
         if (!started.compareAndSet(false, true)) return
         scope.launch {
-            combine(enabled, repository.unreadCount()) { on, unread -> if (on) unread else 0 }
+            combine(enabled, repository.unreadCount(), refreshes) { on, unread, refresh ->
+                (if (on) unread else 0) to refresh
+            }
                 .distinctUntilChanged()
-                .collect(::show)
+                .collect { (unread, _) -> show(unread) }
         }
+    }
+
+    /**
+     * Shows the current count again even if it has not changed; called when the app comes to the front,
+     * so a badge skipped for want of the notification permission appears once it is granted.
+     */
+    fun refresh() {
+        refreshes.update { it + 1 }
     }
 
     private fun show(unread: Int) {

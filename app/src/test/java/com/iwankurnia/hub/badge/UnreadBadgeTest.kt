@@ -88,4 +88,19 @@ class UnreadBadgeTest {
 
         assertNull(badge())
     }
+
+    @Test
+    fun refresh_postsOncePermissionIsGranted() = runTest(UnconfinedTestDispatcher()) {
+        shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        repository.add(item(1), item(2))
+        val badge = UnreadBadge(app, repository, enabled, backgroundScope)
+        badge.start()
+        assertNull(badge())
+
+        // Granted later (say, in onboarding) with no change to the count: the resume refresh posts it.
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        badge.refresh()
+
+        assertEquals(2, badge()!!.number)
+    }
 }

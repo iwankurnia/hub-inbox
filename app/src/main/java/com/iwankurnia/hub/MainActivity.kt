@@ -11,11 +11,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.iwankurnia.hub.badge.UnreadBadge
 import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.ui.nav.HubNavGraph
 import com.iwankurnia.hub.ui.nav.Routes
 import com.iwankurnia.hub.ui.theme.HubTheme
+import dagger.Lazy
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,6 +70,8 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var prefs: HubPrefs
 
+    @Inject lateinit var unreadBadge: Lazy<UnreadBadge>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -84,6 +88,12 @@ class MainActivity : ComponentActivity() {
                 start?.let { HubNavGraph(startDestination = it) }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The notification permission may have been granted meanwhile (onboarding or system settings).
+        unreadBadge.get().refresh()
     }
 
     override fun onNewIntent(intent: Intent) {
