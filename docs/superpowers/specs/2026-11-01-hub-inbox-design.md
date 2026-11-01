@@ -176,9 +176,9 @@ of the list widget) opens the notification in its source app:
 
 ### 4.6 Snooze: removed **(Iwan, 2026-11-01)**
 
-Hub has no snooze: no picker, no snoozed rows, no wake-up alarms or
-notifications of its own, and no exact-alarm, boot or notification
-permissions.
+Hub has no snooze: no picker, no snoozed rows, no wake-up alarms, and no
+exact-alarm or boot permissions. (Hub's one notification of its own is
+the launcher badge, 4.12.)
 
 ### 4.7 Search
 
@@ -196,7 +196,12 @@ Android 16 grouped-container style:
   with its icon, today's count and a switch. Off = Hub ignores that app
   from now on (existing items stay). "N more apps…" expands the list.
 - **Behaviour**: Keep deleted items (7 / 30 / 90 days / forever); Hide
-  silent notifications (switch, default on).
+  silent notifications (switch, default on); **Keep the status bar
+  clear** (switch, default off: when on, the listener cancels each
+  notification from the shade as soon as Hub has captured it, inserted or
+  updated; the content intent stays registered so a tap still opens the
+  app); **Unread badge on the app icon** (switch, default on, see 4.12)
+  **(Iwan, 2026-11-01)**.
 - **System**: Notification access (status + link to the system page);
   Theme (Follows system · Dynamic colour; a toggle for dynamic colour).
 
@@ -219,8 +224,8 @@ follow system dark mode.
 
 An inbox tray with a dot at the top right for "something new". Adaptive
 icon: blue background with white glyph; monochrome layer for Material You
-themed icons; the same tray glyph (no dot) is used inside the app and the
-widgets.
+themed icons; the same tray glyph (no dot) is used inside the app, the
+widgets and as the small icon of the badge notification (4.12).
 
 ### 4.11 Visual language
 
@@ -235,6 +240,23 @@ widgets.
 - Blue seed #0B57D0; unread bar = primary; read reveal green, delete
   reveal error container.
 - Type: Google Sans / Roboto Flex if available, else the system font.
+
+### 4.12 Launcher badge **(Iwan, 2026-11-01)**
+
+Launchers badge an app from its own notifications, so Hub posts one
+silent notification of its own while anything is unread:
+
+- Channel "unread" ("Unread count"), `IMPORTANCE_LOW`, badge allowed;
+  notification id 1; small icon the tray glyph; title "Hub", text "N
+  unread notifications", `setNumber(N)`, silent, alert once, not ongoing.
+  Tapping it opens the Unread tab.
+- Posted or updated whenever the unread count changes and is above zero;
+  cancelled at zero or when the setting is off. One application-wide
+  `UnreadBadge` follows the count, started by the app and by the listener
+  service (which can start without the activity).
+- Android 13+ needs `POST_NOTIFICATIONS`: onboarding asks for it after
+  notification access; without it no badge is posted, silently.
+- The listener's own-package filter keeps the badge out of Hub's list.
 
 ## 5. Data model (my call, builder may reshape)
 

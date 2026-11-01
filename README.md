@@ -43,9 +43,13 @@ Connect the phone with USB debugging on, then:
 adb shell am start -n com.iwankurnia.hub/.MainActivity
 ```
 
-On first run Hub asks for notification access, the only permission it
-needs to be granted. It is a sideloaded debug build; there is no Play Store
-listing.
+On first run Hub asks for notification access (required) and, on
+Android 13+, to post notifications (only for the unread badge on the app
+icon, a silent Hub notification; it can be turned off in Settings). It is a
+sideloaded debug build; there is no Play Store listing.
+
+Settings also offers "Keep the status bar clear", which removes each
+notification from the shade as soon as Hub has captured it.
 
 ## Tests
 
@@ -61,6 +65,7 @@ database; there are no emulator tests.
 ```
 app/src/main/java/com/iwankurnia/hub/
   capture/   NotificationListenerService, mapper, filter, content-intent registry, purge worker
+  badge/     the unread count on the launcher icon, through one silent notification
   data/      Room entities, DAO, repository, DataStore preferences
   ui/        opening an item in its app (shared by the list and search)
   ui/hub     the Hub screen: tabs, chips, date bands, rows, swipes, select mode
