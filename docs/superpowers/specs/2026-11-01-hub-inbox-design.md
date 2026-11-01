@@ -279,7 +279,7 @@ Material structure, lose the noise. Reference:
   20sp semibold title; bar icons in the text colour, a step quieter.
   Select mode turns the bar surfaceContainerHigh with "N selected".
 - List: text tabs (13.5sp semibold, 2dp underline) over a hairline; date
-  bands 11sp letter-spaced capitals; rows with a 3dp unread bar, 32dp bare
+  bands 13sp letter-spaced capitals (raised from 11sp, Iwan 2026-11-01); rows with a 3dp unread bar, 32dp bare
   icon (greyscale when read), 14sp title (bold when unread), 11.5sp time,
   12.5sp preview, 10dp vertical padding and 1dp hairlines between rows of
   one band. Selected rows and the tick tile use surfaceContainerHigh.

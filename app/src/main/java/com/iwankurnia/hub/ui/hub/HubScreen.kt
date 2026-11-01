@@ -482,21 +482,21 @@ private fun BandHeader(band: DateBand) {
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 16.dp, vertical = 7.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
             text = band.label.uppercase(Locale.getDefault()),
-            fontSize = 11.sp,
-            lineHeight = 14.sp,
+            fontSize = 13.sp,
+            lineHeight = 16.sp,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.8.sp,
+            letterSpacing = 1.sp,
             color = colour,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = band.detail,
-            fontSize = 11.sp,
-            lineHeight = 14.sp,
+            fontSize = 12.5.sp,
+            lineHeight = 16.sp,
             fontWeight = FontWeight.Medium,
             color = colour,
         )
