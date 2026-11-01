@@ -216,10 +216,14 @@ Android 16 grouped-container style:
   from now on (existing items stay). "N more apps…" expands the list.
 - **Behaviour**: Keep deleted items (7 / 30 / 90 days / forever); Hide
   silent notifications (switch, default on); **Keep the status bar
-  clear** (switch, default off: when on, the listener cancels each
-  notification from the shade as soon as Hub has captured it, inserted or
-  updated; the content intent stays registered so a tap still opens the
-  app); **Unread badge on the app icon** (switch, default on, see 4.12)
+  clear** (switch, default off: when on, the listener cancels every
+  accepted notification from the shade as soon as it has seen it, whether
+  it was inserted, updated or an identical re-post; group summaries and
+  silent posts from included apps are cancelled too even though they
+  never become items; switching the option on sweeps what is already in
+  the shade; the content intent stays registered so a tap still opens the
+  app) **(amended 2026-11-01 after WhatsApp kept its summary)**; **Unread
+  badge on the app icon** (switch, default on, see 4.12)
   **(Iwan, 2026-11-01)**.
 - **System**: Notification access (status + link to the system page);
   Theme ("Follows system"; a toggle for dynamic colour, off by default

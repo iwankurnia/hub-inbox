@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
@@ -63,17 +64,33 @@ class HubListenerService : NotificationListenerService() {
         }
     }
 
+    /** Seam for tests; production reads the live shade. */
+    internal var shadeContents: () -> List<StatusBarNotification> =
+        { runCatching { activeNotifications }.getOrNull().orEmpty().toList() }
+
     override fun onCreate() {
         super.onCreate()
         // The system may start the listener without the app's activity; the badge follows the count from here too.
         unreadBadge.start()
+        watchClearShade()
+    }
+
+    /** Sweeps the shade the moment "Keep the status bar clear" is switched on, not only for later posts. */
+    internal fun watchClearShade() {
+        scope.launch {
+            prefs.clearShade.distinctUntilChanged().collect { on -> if (on) sweepShade() }
+        }
+    }
+
+    private fun sweepShade() {
+        val ranking = runCatching { currentRanking }.getOrNull()
+        shadeContents().forEach { handle(it, ranking) }
     }
 
     override fun onListenerConnected() {
         registry.canceller = { key -> runCatching { cancelNotification(key) } }
         // Import whatever is already in the shade; the repository's de-dup rules stop duplicates.
-        val ranking = runCatching { currentRanking }.getOrNull()
-        runCatching { activeNotifications }.getOrNull().orEmpty().forEach { handle(it, ranking) }
+        sweepShade()
     }
 
     override fun onListenerDisconnected() {
@@ -118,15 +135,26 @@ class HubListenerService : NotificationListenerService() {
         val importance = channelImportance(sbn, rankingMap)
         enqueue {
             if (!repository.isAppIncluded(sbn.packageName)) return@enqueue
-            if (filter.shouldDrop(sbn, importance, prefs.hideSilent.first())) return@enqueue
+            val clearShade = prefs.clearShade.first()
+            val drop = filter.dropReason(sbn, importance, prefs.hideSilent.first())
+            if (drop != NotificationFilter.Drop.NONE) {
+                // Group summaries and silent posts never become items, but with the option on they must
+                // not linger in the shade either (WhatsApp's "3 new messages" summary, for one).
+                if (clearShade && drop.clearable) clearFromShade(sbn.key)
+                return@enqueue
+            }
             val captured = mapNotification(sbn, this)
             registry.register(sbn)
-            val result = repository.capture(captured)
-            if (result != CaptureResult.Ignored && prefs.clearShade.first()) {
-                clearedForShade += sbn.key
-                registry.cancel(sbn.key)
-            }
+            repository.capture(captured)
+            // Every accepted post is cleared, including an identical re-post that changed nothing in Hub:
+            // chat apps re-post the same conversation on every message.
+            if (clearShade) clearFromShade(sbn.key)
         }
+    }
+
+    private fun clearFromShade(key: String) {
+        clearedForShade += key
+        registry.cancel(key)
     }
 
     /** The channel's importance from the ranking, or null when the system did not supply one. */

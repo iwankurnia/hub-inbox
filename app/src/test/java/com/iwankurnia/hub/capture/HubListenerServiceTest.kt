@@ -158,14 +158,60 @@ class HubListenerServiceTest {
         service.onNotificationPosted(repeat, null)
         settle()
 
-        // Only the captured one leaves the shade.
-        assertEquals(listOf(posted.key), cancelled)
+        // Both leave the shade: a re-post that changed nothing in Hub is still a notification in the shade.
+        assertEquals(listOf(posted.key, repeat.key), cancelled)
 
         // The system reports Hub's own cancel back; the content intent must survive it for a later tap.
         service.onNotificationRemoved(posted, null, NotificationListenerService.REASON_LISTENER_CANCEL)
         settle()
         assertTrue(registry.openContent(posted.key))
         assertTrue(repository.markedReadKeys.isEmpty())
+    }
+
+    @Test
+    fun posted_groupSummary_withClearShade_isClearedButNotCaptured() {
+        runBlocking { prefs.setClearShade(true) }
+        val summary = sbn(
+            TestNotifications.builder(context).setContentTitle("WhatsApp").setContentText("3 new messages")
+                .setGroup("chats").setGroupSummary(true).build(),
+            id = 77,
+        )
+
+        service.onNotificationPosted(summary, null)
+        settle()
+
+        assertEquals(listOf(summary.key), cancelled)
+        assertTrue(repository.captured.isEmpty())
+    }
+
+    @Test
+    fun posted_groupSummary_withoutClearShade_isLeftAlone() {
+        val summary = sbn(
+            TestNotifications.builder(context).setContentTitle("WhatsApp").setContentText("3 new messages")
+                .setGroup("chats").setGroupSummary(true).build(),
+            id = 78,
+        )
+
+        service.onNotificationPosted(summary, null)
+        settle()
+
+        assertTrue(cancelled.isEmpty())
+        assertTrue(repository.captured.isEmpty())
+    }
+
+    @Test
+    fun clearShadeTurnedOn_sweepsWhatIsAlreadyInTheShade() {
+        val already = chat(5)
+        service.shadeContents = { listOf(already) }
+        service.watchClearShade()
+        settle()
+        assertTrue(cancelled.isEmpty())
+
+        runBlocking { prefs.setClearShade(true) }
+        Thread.sleep(300) // DataStore emits on its own thread; give the collector a moment.
+        settle()
+
+        assertEquals(listOf(already.key), cancelled)
     }
 
     @Test
