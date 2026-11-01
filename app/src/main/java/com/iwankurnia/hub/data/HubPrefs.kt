@@ -25,7 +25,7 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
 
     val hideSilent: Flow<Boolean> = store.data.map { it[HIDE_SILENT] ?: true }
     val keepDeletedDays: Flow<Int> = store.data.map { it[KEEP_DELETED_DAYS] ?: 30 }
-    val dynamicColor: Flow<Boolean> = store.data.map { it[DYNAMIC_COLOR] ?: true }
+    val dynamicColor: Flow<Boolean> = store.data.map { it[DYNAMIC_COLOR] ?: false }
 
     /** Remove each notification from the shade once Hub has captured it. */
     val clearShade: Flow<Boolean> = store.data.map { it[CLEAR_SHADE] ?: false }

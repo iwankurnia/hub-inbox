@@ -9,8 +9,9 @@ import androidx.compose.ui.unit.sp
 private val defaults = Typography()
 
 /**
- * Hub typography: the system font (Google Sans / Roboto Flex on most Android 16 phones), with a
- * large, tight display title for the "Hub" heading.
+ * Hub typography: the system font (Google Sans / Roboto Flex on most Android 16 phones). The
+ * compact 20sp "Hub" title is [Typography.titleLarge]; [Typography.displaySmall] stays for the
+ * onboarding heading.
  */
 val HubTypography = Typography(
     displaySmall = defaults.displaySmall.copy(
@@ -20,7 +21,15 @@ val HubTypography = Typography(
         lineHeight = 38.sp,
         letterSpacing = (-0.5).sp,
     ),
+    titleLarge = defaults.titleLarge.copy(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
+        letterSpacing = (-0.2).sp,
+    ),
     titleMedium = defaults.titleMedium.copy(fontFamily = FontFamily.Default),
+    bodyLarge = defaults.bodyLarge.copy(fontFamily = FontFamily.Default),
     bodyMedium = defaults.bodyMedium.copy(fontFamily = FontFamily.Default),
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,

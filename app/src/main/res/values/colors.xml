@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Opaque window behind Compose, close to the light surface; see values-night for dark. -->
-    <color name="window_background">#F7F9FF</color>
+    <color name="window_background">#FBFBFE</color>
 </resources>

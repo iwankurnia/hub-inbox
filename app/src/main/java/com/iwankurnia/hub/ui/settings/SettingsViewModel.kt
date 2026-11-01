@@ -43,7 +43,7 @@ class SettingsViewModel @Inject constructor(
 
     val hideSilent: StateFlow<Boolean> = prefs.hideSilent.state(true)
     val keepDeletedDays: StateFlow<Int> = prefs.keepDeletedDays.state(30)
-    val dynamicColor: StateFlow<Boolean> = prefs.dynamicColor.state(true)
+    val dynamicColor: StateFlow<Boolean> = prefs.dynamicColor.state(false)
     val clearShade: StateFlow<Boolean> = prefs.clearShade.state(false)
     val unreadBadge: StateFlow<Boolean> = prefs.unreadBadge.state(true)
 

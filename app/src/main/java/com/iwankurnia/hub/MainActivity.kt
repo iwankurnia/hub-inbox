@@ -1,8 +1,10 @@
 package com.iwankurnia.hub
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -74,10 +76,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Both bars transparent over the surface; icons dark on light and light on dark.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         if (savedInstanceState == null) PendingRequests.offer(intent)
         setContent {
-            val dynamicColor by prefs.dynamicColor.collectAsStateWithLifecycle(initialValue = true)
+            val dynamicColor by prefs.dynamicColor.collectAsStateWithLifecycle(initialValue = false)
             val onboardingDone by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
             // Chosen once: later preference changes must not rebuild the navigation graph.
             var start by rememberSaveable { mutableStateOf<String?>(null) }
