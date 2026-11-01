@@ -120,10 +120,15 @@ posts is captured, stored locally and shown in one stream.
 
 ### 4.2 Hub screen (home)
 
-- Large "Hub" title top-left; search and settings icons top-right.
-- Three top tabs: **All · Unread · Deleted** **(Iwan)**. Switched by tap; not
-  swipeable, because row swipes are the primary gesture **(my call, amended
-  during implementation)**.
+- Compact 56dp top bar **(Iwan, 2026-11-01: direction A)**: "Hub" on the
+  left; filter, search and an overflow (more_vert) on the right. The
+  overflow holds "Mark all read" (only while the current tab has unread
+  items) and "Settings"; there is no standalone settings icon.
+- Three top tabs: **All · Unread · Deleted** **(Iwan)**, left-aligned text
+  with a 2dp underline on the active one and the unread count as a plain
+  number after "Unread". Tab icons removed with direction A **(Iwan,
+  2026-11-01)**. Switched by tap; not swipeable, because row swipes are the
+  primary gesture **(my call, amended during implementation)**.
 - App filter **(Iwan, 2026-11-01: multi-select)**: a filter icon in the
   top bar opens a sheet with "Every app" then one row per app that has
   items, most recent first, each with its unread count. App rows tick and
@@ -135,22 +140,25 @@ posts is captured, stored locally and shown in one stream.
   counts widget selects just that app. (Search keeps its own
   single-select chip row.)
 - The list is **BB10 style (Iwan)**: flat, full-width rows, hairline
-  dividers, no cards. Grey **date bands** split the stream: "Today" and
-  "Yesterday" with the full date on the right, then weekday names for the
-  last week, then full dates.
-- Row anatomy: the app's launcher icon, 34dp, on the left **(Iwan: app
+  dividers within a band, no cards. Grey **date bands** split the stream,
+  labels in letter-spaced capitals: "Today" and "Yesterday" with the short
+  date on the right ("Sun 1 Nov"), then weekday names for the last week
+  (day and short month on the right), then full dates with the year.
+- Row anatomy: the app's launcher icon, 32dp, on the left **(Iwan: app
   icon, not sender initial)**, a bare launcher icon with no tile, clip or
   border behind it **(Iwan, 2026-11-01)**, the same in the filter sheet,
   search, Settings and both widgets; only when the icon cannot be loaded
   does a tile with the app's initial (or the tray glyph in widgets) stand
   in. Then sender /
   title in one line with the time on the right; one-line preview below.
-- **Unread** is a 4dp blue bar on the row's left edge **(Iwan)**, plus
-  bold title and blue time.
-- Unread tab shows unread, non-deleted items; "Mark all read"
-  lives in its overflow menu. Deleted tab is described in 4.5.
-- Light and dark follow the system setting **(Iwan)**; dynamic colour
-  from the wallpaper where available, blue (#0B57D0 seed) otherwise.
+- **Unread** is a bar on the row's left edge **(Iwan)**, now 3dp in the
+  text colour (black on light, white on dark) with direction A, plus a
+  bold title and a time in the text colour.
+- Unread tab shows unread, non-deleted items. Deleted tab is described
+  in 4.5.
+- Light and dark follow the system setting **(Iwan)**. The neutral
+  direction A palette (4.11) is the default; dynamic colour from the
+  wallpaper is an opt-in setting, off by default.
 
 ### 4.3 Tap: opens the app **(Iwan, 2026-11-01)**
 
@@ -214,15 +222,16 @@ Android 16 grouped-container style:
   app); **Unread badge on the app icon** (switch, default on, see 4.12)
   **(Iwan, 2026-11-01)**.
 - **System**: Notification access (status + link to the system page);
-  Theme (Follows system · Dynamic colour; a toggle for dynamic colour).
+  Theme ("Follows system"; a toggle for dynamic colour, off by default
+  since direction A).
 
 ### 4.9 Widgets **(Iwan)**
 
-Built with Jetpack Glance **(my call)**, rounded Material You surfaces,
-follow system dark mode.
+Built with Jetpack Glance **(my call)**, rounded surfaces in the neutral
+direction A palette (4.11), follow system dark mode.
 
 - **Multi-row widget = notification list.** Header: tray glyph, "Hub",
-  unread count, expand icon. Rows: the newest unread items with the blue
+  unread count, expand icon. Rows: the newest unread items with the unread
   bar, app icon, sender, time, preview. Resizable: 4×2 shows two rows,
   4×3 four, 4×4 six. The newest row shows a Read chip. Tapping a row
   opens that item in its app (4.3); tapping the header opens Hub.
@@ -240,16 +249,48 @@ widgets and as the small icon of the badge notification (4.12).
 
 ### 4.11 Visual language
 
-- Material 3 Expressive: large display title, rounded search bar, tonal
-  chips, large-radius sheets and containers, springy motion on swipe
-  reveals.
+Direction A, "tightened Material" **(Iwan, 2026-11-01)**: keep the
+Material structure, lose the noise. Reference:
+`docs/mockups/redesign-direction-a.html` (phone A).
+
+- Palette: neutral, the accent is the text colour itself.
+
+  | Role | Light | Dark |
+  | --- | --- | --- |
+  | background, surface | #FBFBFE | #0F1114 |
+  | surfaceContainer (date bands, settings groups) | #F2F3F8 | #1B1E23 |
+  | surfaceContainerHigh (selection, chips, select bar) | #E8E9EF | #23272D |
+  | outlineVariant (hairlines) | #E2E3EA | #2A2F36 |
+  | onSurface = primary | #1A1C1E | #E6E8EC |
+  | onSurfaceVariant | #6B6F78 | #A9ADB5 |
+  | secondary (read times) | #8A8E97 | #8E9199 |
+
+  primaryContainer is surfaceContainerHigh. Error and errorContainer keep
+  the Material defaults (delete reveal, Deleted banner). The read reveal is
+  #E3E5EA / #2A2F36 with onSurface text. The snackbar keeps Material's
+  inverse surface with a light-blue (dark-blue in dark mode) action.
+  Dynamic colour is honoured when switched on in Settings, off by default.
+- Chrome: transparent status and navigation bars over the surface
+  (edge to edge), dark icons on light, light on dark. 56dp top bars with a
+  20sp semibold title; bar icons in the text colour, a step quieter.
+  Select mode turns the bar surfaceContainerHigh with "N selected".
+- List: text tabs (13.5sp semibold, 2dp underline) over a hairline; date
+  bands 11sp letter-spaced capitals; rows with a 3dp unread bar, 32dp bare
+  icon (greyscale when read), 14sp title (bold when unread), 11.5sp time,
+  12.5sp preview, 10dp vertical padding and 1dp hairlines between rows of
+  one band. Selected rows and the tick tile use surfaceContainerHigh.
+- Settings: uppercase letter-spaced section labels, 16dp-radius
+  surfaceContainer groups, switches with an onSurface track. Onboarding,
+  the filter sheet and search share the palette; the filter sheet shows
+  unread counts as plain numbers.
+- Widgets: always the neutral scheme, no blue anywhere: header and unread
+  bar in onSurface, count pill surfaceContainerHigh, per-app badges
+  onSurface with surface text. The launcher icon is unchanged.
 - Icons: Material Symbols, rounded style **(Iwan: proper icons, not
   emoji)**: search, settings, more_vert, arrow_back, close, done_all,
   mark_email_read, delete, delete_sweep, open_in_new, chevron_right,
   notifications, auto_delete, notifications_off, palette, add_circle,
-  open_in_full, check, restore.
-- Blue seed #0B57D0; unread bar = primary; read reveal green, delete
-  reveal error container.
+  open_in_full, check, restore, filter_list.
 - Type: Google Sans / Roboto Flex if available, else the system font.
 
 ### 4.12 Launcher badge **(Iwan, 2026-11-01)**
