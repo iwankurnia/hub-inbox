@@ -106,7 +106,9 @@ class HubListenerService : NotificationListenerService() {
             if (filter.shouldDrop(sbn, importance, prefs.hideSilent.first())) return@enqueue
             val captured = mapNotification(sbn, this)
             registry.register(sbn)
-            repository.capture(captured)
+            val result = repository.capture(captured)
+            // The registry keeps the content intent, so a tap in Hub still opens the app afterwards.
+            if (result != CaptureResult.Ignored && prefs.clearShade.first()) registry.cancel(sbn.key)
         }
     }
 

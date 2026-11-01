@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.AutoDelete
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ClearAll
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Palette
@@ -84,6 +85,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
     val hideSilent by viewModel.hideSilent.collectAsStateWithLifecycle()
     val keepDays by viewModel.keepDeletedDays.collectAsStateWithLifecycle()
     val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
+    val clearShade by viewModel.clearShade.collectAsStateWithLifecycle()
     val iconCache = remember { AppIconCache(context.applicationContext) }
     var showAllApps by rememberSaveable { mutableStateOf(false) }
     var keepDialog by rememberSaveable { mutableStateOf(false) }
@@ -144,6 +146,14 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     subtitle = stringResource(R.string.settings_hide_silent_summary),
                     onClick = { viewModel.setHideSilent(!hideSilent) },
                     trailing = { Switch(checked = hideSilent, onCheckedChange = viewModel::setHideSilent) },
+                )
+                Hairline()
+                SettingsRow(
+                    icon = Icons.Rounded.ClearAll,
+                    title = stringResource(R.string.settings_clear_shade),
+                    subtitle = stringResource(R.string.settings_clear_shade_summary),
+                    onClick = { viewModel.setClearShade(!clearShade) },
+                    trailing = { Switch(checked = clearShade, onCheckedChange = viewModel::setClearShade) },
                 )
             }
 

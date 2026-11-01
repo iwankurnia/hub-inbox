@@ -90,6 +90,8 @@
     <string name="settings_keep_deleted_forever">Forever</string>
     <string name="settings_hide_silent">Hide silent notifications</string>
     <string name="settings_hide_silent_summary">Ones Android shows silently</string>
+    <string name="settings_clear_shade">Keep the status bar clear</string>
+    <string name="settings_clear_shade_summary">Hub removes each notification from the shade as soon as it has captured it</string>
     <string name="settings_section_system">System</string>
     <string name="settings_notification_access">Notification access</string>
     <string name="settings_access_granted">Granted</string>

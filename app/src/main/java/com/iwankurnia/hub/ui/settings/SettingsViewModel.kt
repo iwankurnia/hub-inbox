@@ -44,11 +44,14 @@ class SettingsViewModel @Inject constructor(
     val hideSilent: StateFlow<Boolean> = prefs.hideSilent.state(true)
     val keepDeletedDays: StateFlow<Int> = prefs.keepDeletedDays.state(30)
     val dynamicColor: StateFlow<Boolean> = prefs.dynamicColor.state(true)
+    val clearShade: StateFlow<Boolean> = prefs.clearShade.state(false)
 
     fun setAppIncluded(packageName: String, included: Boolean): Job = viewModelScope.launch { repository.setAppIncluded(packageName, included) }
 
     /** Days to keep deleted items; [KEEP_FOREVER] keeps them until emptied. */
     fun setKeepDeletedDays(days: Int): Job = viewModelScope.launch { prefs.setKeepDeletedDays(days) }
+
+    fun setClearShade(value: Boolean): Job = viewModelScope.launch { prefs.setClearShade(value) }
 
     fun setHideSilent(value: Boolean): Job = viewModelScope.launch { prefs.setHideSilent(value) }
 

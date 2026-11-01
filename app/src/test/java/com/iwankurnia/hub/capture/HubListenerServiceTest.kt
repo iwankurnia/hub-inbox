@@ -35,18 +35,23 @@ class HubListenerServiceTest {
     private val repository = FakeHubRepository()
     private val registry = LiveActionsRegistry(context)
     private lateinit var service: HubListenerService
+    private lateinit var prefs: HubPrefs
+    private val cancelled = mutableListOf<String>()
 
     @Before
     fun setUp() {
         val store = PreferenceDataStoreFactory.create(scope = prefsScope) {
             folder.root.resolve("hub_prefs.preferences_pb")
         }
+        prefs = HubPrefs(store)
         // Built but not created, so Hilt does not inject; the fakes go in by hand.
         service = Robolectric.buildService(HubListenerService::class.java).get().also {
             it.repository = repository
-            it.prefs = HubPrefs(store)
+            it.prefs = prefs
             it.registry = registry
         }
+        // Stands in for the connected listener's cancelNotification.
+        registry.canceller = { cancelled += it }
     }
 
     @After
@@ -140,5 +145,30 @@ class HubListenerServiceTest {
 
         assertEquals(listOf("capture:${posted.key}", "markRead:${posted.key}"), repository.calls)
         assertFalse(registry.openContent(posted.key))
+    }
+
+    @Test
+    fun posted_withClearShade_cancelsAfterCapture() {
+        runBlocking { prefs.setClearShade(true) }
+        val posted = chat(1)
+        val repeat = chat(2)
+        repository.ignoredKeys = setOf(repeat.key)
+
+        service.onNotificationPosted(posted, null)
+        service.onNotificationPosted(repeat, null)
+        settle()
+
+        // Only the captured one leaves the shade, and its content intent is still there for a tap.
+        assertEquals(listOf(posted.key), cancelled)
+        assertTrue(registry.openContent(posted.key))
+    }
+
+    @Test
+    fun posted_withoutClearShade_leavesShade() {
+        service.onNotificationPosted(chat(1), null)
+        settle()
+
+        assertEquals(1, repository.captured.size)
+        assertTrue(cancelled.isEmpty())
     }
 }

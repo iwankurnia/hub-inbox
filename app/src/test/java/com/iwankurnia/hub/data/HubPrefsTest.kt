@@ -42,6 +42,7 @@ class HubPrefsTest {
         assertTrue(prefs.hideSilent.first())
         assertEquals(30, prefs.keepDeletedDays.first())
         assertTrue(prefs.dynamicColor.first())
+        assertFalse(prefs.clearShade.first())
         assertTrue(prefs.recentSearches.first().isEmpty())
         assertFalse(prefs.onboardingDone.first())
     }
@@ -51,11 +52,13 @@ class HubPrefsTest {
         prefs.setHideSilent(false)
         prefs.setKeepDeletedDays(7)
         prefs.setDynamicColor(false)
+        prefs.setClearShade(true)
         prefs.setOnboardingDone(true)
 
         assertFalse(prefs.hideSilent.first())
         assertEquals(7, prefs.keepDeletedDays.first())
         assertFalse(prefs.dynamicColor.first())
+        assertTrue(prefs.clearShade.first())
         assertTrue(prefs.onboardingDone.first())
     }
 

@@ -17,9 +17,13 @@ internal class FakeHubRepository : HubRepository {
     val calls: MutableList<String> = Collections.synchronizedList(mutableListOf())
     var excludedPackages: Set<String> = emptySet()
 
+    /** Keys whose capture the fake reports as [CaptureResult.Ignored], as a repeat post would be. */
+    var ignoredKeys: Set<String> = emptySet()
+
     override suspend fun capture(c: CapturedNotification): CaptureResult {
         captured += c
         calls += "capture:${c.notifKey}"
+        if (c.notifKey in ignoredKeys) return CaptureResult.Ignored
         return CaptureResult.Inserted(listOf(captured.size.toLong()))
     }
 
