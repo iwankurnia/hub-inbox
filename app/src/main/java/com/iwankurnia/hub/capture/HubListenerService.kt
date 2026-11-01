@@ -186,8 +186,8 @@ class HubListenerService : NotificationListenerService() {
     }
 
     private companion object {
-        /** Sound, vibration and the heads-up banner (about five seconds) have finished by then. */
-        const val SHADE_CLEAR_DELAY_MS = 6_000L
+        /** Sound, vibration and the heads-up banner (about five seconds) have finished by then (Iwan: ten seconds). */
+        const val SHADE_CLEAR_DELAY_MS = 10_000L
         const val TAG = "HubListener"
     }
 }
