@@ -44,18 +44,14 @@ class AppIconCache @Inject constructor(@ApplicationContext ctx: Context) {
         }
     }
 
-    /**
-     * The icon drawn into a square bitmap of [sizePx], drawn once per size and cached. Call it on the main
-     * thread only: launcher icons are usually adaptive icons with vector layers, and drawing those off the
-     * main thread can crash the renderer. Elsewhere use [iconBitmapOnMain].
-     */
-    fun iconBitmap(packageName: String, sizePx: Int): Bitmap? {
-        bitmaps.get(key(packageName, sizePx))?.let { return it }
-        val drawable = icon(packageName) ?: return null
-        return draw(packageName, sizePx, drawable)
-    }
+    /** The icon already drawn at [sizePx], or null; never draws, so it is safe from any thread. */
+    fun cachedBitmap(packageName: String, sizePx: Int): Bitmap? = bitmaps.get(key(packageName, sizePx))
 
-    /** [iconBitmap] from any thread: a cached bitmap straight away, otherwise drawn on the main thread. */
+    /**
+     * The icon drawn into a square bitmap of [sizePx], once per size, then cached; callable from any thread.
+     * Drawing always happens on the main thread: launcher icons are usually adaptive icons with vector
+     * layers, and drawing those elsewhere can crash the renderer.
+     */
     suspend fun iconBitmapOnMain(packageName: String, sizePx: Int): Bitmap? {
         bitmaps.get(key(packageName, sizePx))?.let { return it }
         val drawable = icon(packageName) ?: return null

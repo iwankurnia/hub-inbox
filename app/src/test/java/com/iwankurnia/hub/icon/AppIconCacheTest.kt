@@ -51,15 +51,16 @@ class AppIconCacheTest {
         shadowOf(context.packageManager).setApplicationIcon("com.example.chat", ColorDrawable(Color.BLUE))
         val cache = AppIconCache(context)
 
-        val small = cache.iconBitmap("com.example.chat", 48)!!
-        val large = cache.iconBitmap("com.example.chat", 96)!!
+        assertNull(cache.cachedBitmap("com.example.chat", 48))
+        val small = cache.iconBitmapOnMain("com.example.chat", 48)!!
+        val large = cache.iconBitmapOnMain("com.example.chat", 96)!!
         assertEquals(48, small.width)
         assertEquals(96, large.width)
         assertNotSame(small, large)
 
-        // Drawn once per size: later lookups, sync or suspending, return the same bitmap without the package manager.
+        // Drawn once per size: later lookups, peeked or suspending, return the same bitmap without the package manager.
         shadowOf(context.packageManager).deletePackage("com.example.chat")
-        assertSame(small, cache.iconBitmap("com.example.chat", 48))
+        assertSame(small, cache.cachedBitmap("com.example.chat", 48))
         assertSame(large, cache.iconBitmapOnMain("com.example.chat", 96))
         assertNull(cache.iconBitmapOnMain("com.example.gone", 48))
     }
