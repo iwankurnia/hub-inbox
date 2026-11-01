@@ -3,6 +3,15 @@ package com.iwankurnia.hub.ui.hub
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import kotlin.math.roundToInt
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.offset
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.animateColorAsState
@@ -313,10 +322,11 @@ private val TabStripHeight = 48.dp
 
 /**
  * The tab strip Iwan pointed at on m3.material.io (2026-11-01): one full-width rounded track split
- * into equal sections, each an icon and a label side by side, the active section a filled tonal pill.
+ * into equal sections, each an icon and a label side by side, the active section a filled pill.
  * On the neutral scheme the track and pill are two grey steps ([HubColors.tabTrack],
  * [HubColors.tabSelected]); with dynamic colour on they are the wallpaper's surfaceContainer and
- * secondaryContainer. The pill colour animates so a change of tab fades rather than snaps.
+ * secondaryContainer. One pill is drawn under the labels and slides to the chosen section (Iwan:
+ * "the tab animation should slide over, not glitch"); the label colours cross-fade alongside.
  */
 @Composable
 private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
@@ -330,56 +340,76 @@ private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
         Triple(HubTab.UNREAD, R.string.tab_unread, Icons.Rounded.MarkEmailUnread),
         Triple(HubTab.DELETED, R.string.tab_deleted, Icons.Rounded.Delete),
     )
+    val selectedIndex = tabs.indexOfFirst { it.first == tab }.coerceAtLeast(0)
+    // The pill's section, as a fraction that animates between whole sections.
+    val position by animateFloatAsState(
+        targetValue = selectedIndex.toFloat(),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "tabPill",
+    )
+    var trackWidth by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val sectionWidth = with(density) { (trackWidth / tabs.size).toDp() }
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(accent.surfaceContainerLow)
             .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp),
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(TabStripHeight)
                 .clip(RoundedCornerShape(50))
                 .background(track)
-                .selectableGroup(),
+                .onSizeChanged { trackWidth = it.width },
         ) {
-            tabs.forEach { (value, label, icon) ->
-                val selected = value == tab
-                val container by animateColorAsState(if (selected) pill else Color.Transparent, label = "tabPill")
-                val content by animateColorAsState(if (selected) onPill else accent.onSurfaceVariant, label = "tabContent")
-                Row(
+            if (trackWidth > 0) {
+                Box(
                     modifier = Modifier
-                        .weight(1f)
+                        .offset { IntOffset((position * trackWidth / tabs.size).roundToInt(), 0) }
+                        .width(sectionWidth)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(50))
-                        .background(container)
-                        .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(label),
-                        fontSize = 14.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = content,
-                        maxLines = 1,
-                    )
-                    if (value == HubTab.UNREAD && unreadCount > 0) {
-                        Spacer(Modifier.width(6.dp))
+                        .background(pill),
+                )
+            }
+            Row(modifier = Modifier.fillMaxSize().selectableGroup()) {
+                tabs.forEach { (value, label, icon) ->
+                    val selected = value == tab
+                    val content by animateColorAsState(if (selected) onPill else accent.onSurfaceVariant, label = "tabContent")
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(50))
+                            .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text = unreadCount.toString(),
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            text = stringResource(label),
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                             color = content,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(content.copy(alpha = 0.12f))
-                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                            maxLines = 1,
                         )
+                        if (value == HubTab.UNREAD && unreadCount > 0) {
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = unreadCount.toString(),
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = content,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(content.copy(alpha = 0.12f))
+                                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                            )
+                        }
                     }
                 }
             }

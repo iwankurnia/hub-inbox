@@ -134,8 +134,9 @@ posts is captured, stored locally and shown in one stream.
   filled pill. Neutral scheme: track surfaceContainerHigh, pill a grey
   step darker (`HubColors.tabTrack` / `tabSelected`); dynamic colour:
   the wallpaper's surfaceContainer and secondaryContainer. Inactive text
-  onSurfaceVariant; the unread count as a small translucent pill; the
-  pill colour animates on change. Per the guideline: fixed, equal
+  onSurfaceVariant; the unread count as a small translucent pill; one
+  pill slides to the chosen section on a no-bounce spring **(Iwan: "the
+  tab animation should slide over, not glitch")**. Per the guideline: fixed, equal
   sections, icon and label on every tab, at most four, a badge for the
   count. The earlier button-group draft (option A of
   docs/mockups/bar-and-tabs-android16.html) was replaced the same day. Switched by tap; not swipeable,
