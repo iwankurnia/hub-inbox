@@ -177,7 +177,7 @@ private fun AppIcon(app: AppTile, alpha: Float) {
             provider = ImageProvider(app.icon),
             contentDescription = description,
             alpha = alpha,
-            modifier = GlanceModifier.size(ICON_DP.dp).cornerRadius(12.dp),
+            modifier = GlanceModifier.size(ICON_DP.dp),
         )
     } else {
         Box(

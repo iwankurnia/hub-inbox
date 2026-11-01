@@ -275,7 +275,7 @@ private fun AppIcon(icon: Bitmap?) {
         Image(
             provider = ImageProvider(icon),
             contentDescription = null,
-            modifier = GlanceModifier.size(ICON_DP.dp).cornerRadius(8.dp),
+            modifier = GlanceModifier.size(ICON_DP.dp),
         )
     } else {
         Box(

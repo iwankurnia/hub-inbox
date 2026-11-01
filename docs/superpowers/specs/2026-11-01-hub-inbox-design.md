@@ -138,8 +138,12 @@ posts is captured, stored locally and shown in one stream.
   dividers, no cards. Grey **date bands** split the stream: "Today" and
   "Yesterday" with the full date on the right, then weekday names for the
   last week, then full dates.
-- Row anatomy: square app icon (the app's launcher icon, 34dp, 9dp
-  radius) on the left **(Iwan: app icon, not sender initial)**; sender /
+- Row anatomy: the app's launcher icon, 34dp, on the left **(Iwan: app
+  icon, not sender initial)**, a bare launcher icon with no tile, clip or
+  border behind it **(Iwan, 2026-11-01)**, the same in the filter sheet,
+  search, Settings and both widgets; only when the icon cannot be loaded
+  does a tile with the app's initial (or the tray glyph in widgets) stand
+  in. Then sender /
   title in one line with the time on the right; one-line preview below.
 - **Unread** is a 4dp blue bar on the row's left edge **(Iwan)**, plus
   bold title and blue time.

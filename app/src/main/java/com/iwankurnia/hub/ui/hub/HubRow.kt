@@ -184,29 +184,31 @@ private fun RestoreChip(onRestore: () -> Unit) {
     }
 }
 
-/** The app's launcher icon in a rounded square. */
+/** The app's launcher icon, drawn bare; the initial on a tile until it loads or when the app is gone. */
 @Composable
 fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, greyscale: Boolean = false) {
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
     val icon = rememberAppIcon(packageName, iconCache, sizePx)
     val label = stringResource(R.string.cd_app_icon, iconCache.label(packageName))
-    Box(
-        modifier = Modifier
-            .semantics { contentDescription = label }
-            .size(size)
-            .clip(if (size == IconSize) IconShape else RoundedCornerShape(size / 4))
-            .background(MaterialTheme.colorScheme.secondaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (icon != null) {
-            Image(
-                bitmap = icon,
-                contentDescription = null,
-                modifier = Modifier.size(size),
-                // A read item keeps its icon but loses its colour, like a BB10 read row.
-                colorFilter = if (greyscale) GreyscaleFilter else null,
-            )
-        } else {
+    if (icon != null) {
+        // The launcher icon as the app drew it: no tile, clip or border behind it.
+        Image(
+            bitmap = icon,
+            contentDescription = label,
+            modifier = Modifier.size(size),
+            // A read item keeps its icon but loses its colour, like a BB10 read row.
+            colorFilter = if (greyscale) GreyscaleFilter else null,
+        )
+    } else {
+        // Not installed or not loaded yet: the app's initial on a tile.
+        Box(
+            modifier = Modifier
+                .semantics { contentDescription = label }
+                .size(size)
+                .clip(if (size == IconSize) IconShape else RoundedCornerShape(size / 4))
+                .background(MaterialTheme.colorScheme.secondaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
             Text(
                 text = iconCache.label(packageName).take(1).uppercase(),
                 color = MaterialTheme.colorScheme.onSecondaryContainer,

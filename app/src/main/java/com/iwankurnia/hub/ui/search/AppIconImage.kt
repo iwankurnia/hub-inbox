@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 
-/** An app's launcher icon in a rounded square, or its initial when the app is not installed. */
+/** An app's launcher icon drawn bare (no tile or clip), or its initial on a tile when the app is not installed. */
 @Composable
 fun AppIconImage(icon: Drawable?, label: String, size: Dp = 34.dp, modifier: Modifier = Modifier, greyscale: Boolean = false) {
     val shape = RoundedCornerShape(size * 9 / 34)
@@ -29,7 +29,7 @@ fun AppIconImage(icon: Drawable?, label: String, size: Dp = 34.dp, modifier: Mod
         Image(
             bitmap = bitmap,
             contentDescription = null,
-            modifier = modifier.size(size).clip(shape),
+            modifier = modifier.size(size),
             colorFilter = if (greyscale) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null,
         )
     } else {
