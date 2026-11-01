@@ -28,13 +28,14 @@ class RoomHubRepository(
     override fun pagedItems(filter: HubFilter): Flow<PagingData<NotificationItem>> =
         Pager(PagingConfig(pageSize = PAGE_SIZE)) {
             when (filter.tab) {
-                HubTab.ALL -> dao.pagingAll(filter.packageName)
-                HubTab.UNREAD -> dao.pagingUnread(filter.packageName)
-                HubTab.DELETED -> dao.pagingDeleted(filter.packageName)
+                HubTab.ALL -> dao.pagingAll(filter.packageNames.isEmpty(), filter.packageNames.toList())
+                HubTab.UNREAD -> dao.pagingUnread(filter.packageNames.isEmpty(), filter.packageNames.toList())
+                HubTab.DELETED -> dao.pagingDeleted(filter.packageNames.isEmpty(), filter.packageNames.toList())
             }
         }.flow
 
-    override fun unreadCount(packageName: String?): Flow<Int> = dao.unreadCount(packageName)
+    override fun unreadCount(packageNames: Set<String>): Flow<Int> =
+        dao.unreadCount(packageNames.isEmpty(), packageNames.toList())
 
     override fun appCounts(): Flow<List<AppCount>> = dao.appCounts()
 
@@ -44,14 +45,16 @@ class RoomHubRepository(
 
     override suspend fun markUnread(ids: List<Long>) = mutate { dao.markUnread(ids) }
 
-    override suspend fun markAllRead(packageName: String?) = mutate { dao.markAllRead(packageName) }
+    override suspend fun markAllRead(packageNames: Set<String>) =
+        mutate { dao.markAllRead(packageNames.isEmpty(), packageNames.toList()) }
 
     override suspend fun markReadByKey(notifKey: String) = mutate { dao.markReadByKey(notifKey) }
 
     override suspend fun notifKeys(ids: List<Long>): List<String> =
         if (ids.isEmpty()) emptyList() else dao.notifKeys(ids)
 
-    override suspend fun unreadNotifKeys(packageName: String?): List<String> = dao.unreadNotifKeys(packageName)
+    override suspend fun unreadNotifKeys(packageNames: Set<String>): List<String> =
+        dao.unreadNotifKeys(packageNames.isEmpty(), packageNames.toList())
 
     override suspend fun delete(ids: List<Long>) = mutate { dao.delete(ids, clock()) }
 

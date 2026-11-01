@@ -11,14 +11,15 @@ enum class HubTab { ALL, UNREAD, DELETED }
 /** Per-app counts for the account rail and the app-count widget. */
 data class AppCount(val packageName: String, val unread: Int, val total: Int, val lastSeenAt: Long)
 
-/** Which tab, optionally narrowed to one app. */
-data class HubFilter(val tab: HubTab = HubTab.ALL, val packageName: String? = null)
+/** Which tab, narrowed to [packageNames]; an empty set means every app. */
+data class HubFilter(val tab: HubTab = HubTab.ALL, val packageNames: Set<String> = emptySet())
 
 /** The single data contract every screen, the listener and the widgets code against. */
 interface HubRepository {
     /** ALL: ACTIVE; UNREAD: ACTIVE and unread; DELETED: DELETED. Newest `sortAt` first (DELETED by `deletedAt`). */
     fun pagedItems(filter: HubFilter): Flow<PagingData<NotificationItem>>
-    fun unreadCount(packageName: String? = null): Flow<Int>
+    /** ACTIVE unread items in [packageNames]; empty = every app. */
+    fun unreadCount(packageNames: Set<String> = emptySet()): Flow<Int>
 
     /** ACTIVE items only, most recently seen app first. */
     fun appCounts(): Flow<List<AppCount>>
@@ -26,14 +27,15 @@ interface HubRepository {
     suspend fun item(id: Long): NotificationItem?
     suspend fun markRead(ids: List<Long>)
     suspend fun markUnread(ids: List<Long>)
-    suspend fun markAllRead(packageName: String?)
+    /** Marks every ACTIVE unread item in [packageNames] read; empty = every app. */
+    suspend fun markAllRead(packageNames: Set<String>)
     suspend fun markReadByKey(notifKey: String)
 
     /** The distinct notification keys of these items, in any state; used to clear their system notifications. */
     suspend fun notifKeys(ids: List<Long>): List<String>
 
-    /** The distinct notification keys of ACTIVE unread items, optionally for one app; what [markAllRead] will touch. */
-    suspend fun unreadNotifKeys(packageName: String?): List<String>
+    /** The distinct notification keys of ACTIVE unread items in [packageNames] (empty = every app); what [markAllRead] will touch. */
+    suspend fun unreadNotifKeys(packageNames: Set<String>): List<String>
 
     /** state = DELETED, deletedAt = now. */
     suspend fun delete(ids: List<Long>)

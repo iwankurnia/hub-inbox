@@ -8,34 +8,35 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+/** Queries that take `all` and `pkgs` cover every app when `all` is true, else only the packages in `pkgs`. */
 @Dao
 interface HubDao {
 
     // Lists
 
     @Query(
-        "SELECT * FROM items WHERE state = 'ACTIVE' AND (:pkg IS NULL OR packageName = :pkg) " +
+        "SELECT * FROM items WHERE state = 'ACTIVE' AND (:all OR packageName IN (:pkgs)) " +
             "ORDER BY sortAt DESC, id DESC",
     )
-    fun pagingAll(pkg: String?): PagingSource<Int, NotificationItem>
+    fun pagingAll(all: Boolean, pkgs: List<String>): PagingSource<Int, NotificationItem>
 
     @Query(
         "SELECT * FROM items WHERE state = 'ACTIVE' AND isRead = 0 " +
-            "AND (:pkg IS NULL OR packageName = :pkg) ORDER BY sortAt DESC, id DESC",
+            "AND (:all OR packageName IN (:pkgs)) ORDER BY sortAt DESC, id DESC",
     )
-    fun pagingUnread(pkg: String?): PagingSource<Int, NotificationItem>
+    fun pagingUnread(all: Boolean, pkgs: List<String>): PagingSource<Int, NotificationItem>
 
     @Query(
-        "SELECT * FROM items WHERE state = 'DELETED' AND (:pkg IS NULL OR packageName = :pkg) " +
+        "SELECT * FROM items WHERE state = 'DELETED' AND (:all OR packageName IN (:pkgs)) " +
             "ORDER BY deletedAt DESC, id DESC",
     )
-    fun pagingDeleted(pkg: String?): PagingSource<Int, NotificationItem>
+    fun pagingDeleted(all: Boolean, pkgs: List<String>): PagingSource<Int, NotificationItem>
 
     @Query(
         "SELECT COUNT(*) FROM items WHERE state = 'ACTIVE' AND isRead = 0 " +
-            "AND (:pkg IS NULL OR packageName = :pkg)",
+            "AND (:all OR packageName IN (:pkgs))",
     )
-    fun unreadCount(pkg: String?): Flow<Int>
+    fun unreadCount(all: Boolean, pkgs: List<String>): Flow<Int>
 
     @Query(
         "SELECT packageName, " +
@@ -55,9 +56,9 @@ interface HubDao {
 
     @Query(
         "SELECT DISTINCT notifKey FROM items WHERE state = 'ACTIVE' AND isRead = 0 " +
-            "AND (:pkg IS NULL OR packageName = :pkg)",
+            "AND (:all OR packageName IN (:pkgs))",
     )
-    suspend fun unreadNotifKeys(pkg: String?): List<String>
+    suspend fun unreadNotifKeys(all: Boolean, pkgs: List<String>): List<String>
 
     // Read state
 
@@ -69,9 +70,9 @@ interface HubDao {
 
     @Query(
         "UPDATE items SET isRead = 1 WHERE state = 'ACTIVE' AND isRead = 0 " +
-            "AND (:pkg IS NULL OR packageName = :pkg)",
+            "AND (:all OR packageName IN (:pkgs))",
     )
-    suspend fun markAllRead(pkg: String?)
+    suspend fun markAllRead(all: Boolean, pkgs: List<String>)
 
     @Query("UPDATE items SET isRead = 1 WHERE state = 'ACTIVE' AND isRead = 0 AND notifKey = :notifKey")
     suspend fun markReadByKey(notifKey: String)

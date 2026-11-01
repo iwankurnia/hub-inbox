@@ -30,13 +30,16 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
 
     fun add(vararg newItems: NotificationItem) = items.update { it + newItems }
 
+    private fun inApps(item: NotificationItem, packageNames: Set<String>) =
+        packageNames.isEmpty() || item.packageName in packageNames
+
     private fun change(ids: List<Long>, f: (NotificationItem) -> NotificationItem) =
         items.update { list -> list.map { if (it.id in ids) f(it) else it } }
 
     override fun pagedItems(filter: HubFilter): Flow<PagingData<NotificationItem>> = emptyFlow()
 
-    override fun unreadCount(packageName: String?): Flow<Int> =
-        items.map { list -> list.count { !it.isRead && it.state == ItemState.ACTIVE } }
+    override fun unreadCount(packageNames: Set<String>): Flow<Int> =
+        items.map { list -> list.count { !it.isRead && it.state == ItemState.ACTIVE && inApps(it, packageNames) } }
 
     override fun appCounts(): Flow<List<AppCount>> = counts
 
@@ -49,8 +52,8 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
 
     override suspend fun markUnread(ids: List<Long>) = change(ids) { it.copy(isRead = false) }
 
-    override suspend fun markAllRead(packageName: String?) =
-        items.update { list -> list.map { if (packageName == null || it.packageName == packageName) it.copy(isRead = true) else it } }
+    override suspend fun markAllRead(packageNames: Set<String>) =
+        items.update { list -> list.map { if (inApps(it, packageNames)) it.copy(isRead = true) else it } }
 
     override suspend fun markReadByKey(notifKey: String) =
         items.update { list -> list.map { if (it.notifKey == notifKey) it.copy(isRead = true) else it } }
@@ -58,10 +61,9 @@ class InMemoryHubRepository(private val clock: () -> Long = { 0L }) : HubReposit
     override suspend fun notifKeys(ids: List<Long>): List<String> =
         items.value.filter { it.id in ids }.map { it.notifKey }.distinct()
 
-    override suspend fun unreadNotifKeys(packageName: String?): List<String> =
-        items.value.filter {
-            it.state == ItemState.ACTIVE && !it.isRead && (packageName == null || it.packageName == packageName)
-        }.map { it.notifKey }.distinct()
+    override suspend fun unreadNotifKeys(packageNames: Set<String>): List<String> =
+        items.value.filter { it.state == ItemState.ACTIVE && !it.isRead && inApps(it, packageNames) }
+            .map { it.notifKey }.distinct()
 
     override suspend fun delete(ids: List<Long>) =
         change(ids) { it.copy(state = ItemState.DELETED, deletedAt = clock()) }

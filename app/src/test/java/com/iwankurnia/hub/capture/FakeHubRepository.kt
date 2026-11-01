@@ -35,14 +35,14 @@ internal class FakeHubRepository : HubRepository {
     override suspend fun isAppIncluded(packageName: String): Boolean = packageName !in excludedPackages
 
     override fun pagedItems(filter: HubFilter): Flow<PagingData<NotificationItem>> = TODO()
-    override fun unreadCount(packageName: String?): Flow<Int> = TODO()
+    override fun unreadCount(packageNames: Set<String>): Flow<Int> = TODO()
     override fun appCounts(): Flow<List<AppCount>> = TODO()
     override suspend fun item(id: Long): NotificationItem? = TODO()
     override suspend fun markRead(ids: List<Long>) = TODO()
     override suspend fun markUnread(ids: List<Long>) = TODO()
-    override suspend fun markAllRead(packageName: String?) = TODO()
+    override suspend fun markAllRead(packageNames: Set<String>) = TODO()
     override suspend fun notifKeys(ids: List<Long>): List<String> = TODO()
-    override suspend fun unreadNotifKeys(packageName: String?): List<String> = TODO()
+    override suspend fun unreadNotifKeys(packageNames: Set<String>): List<String> = TODO()
     override suspend fun delete(ids: List<Long>) = TODO()
     override suspend fun restore(ids: List<Long>) = TODO()
     override suspend fun purge(ids: List<Long>) = TODO()

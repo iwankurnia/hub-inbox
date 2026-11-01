@@ -50,18 +50,43 @@ class HubViewModelTest {
     @Test
     fun selectTab_changesFilter() = runTest(dispatcher) {
         backgroundScope.launch { vm.items.collect {} }
-        assertEquals(HubFilter(HubTab.ALL, null), repo.requestedFilters.last())
+        assertEquals(HubFilter(HubTab.ALL), repo.requestedFilters.last())
 
         vm.selectTab(HubTab.UNREAD)
         assertEquals(HubTab.UNREAD, vm.tab.value)
-        assertEquals(HubFilter(HubTab.UNREAD, null), repo.requestedFilters.last())
+        assertEquals(HubFilter(HubTab.UNREAD), repo.requestedFilters.last())
 
-        vm.filterApp("com.whatsapp")
-        assertEquals(HubFilter(HubTab.UNREAD, "com.whatsapp"), repo.requestedFilters.last())
+        vm.toggleApp("com.whatsapp")
+        assertEquals(HubFilter(HubTab.UNREAD, setOf("com.whatsapp")), repo.requestedFilters.last())
 
         // The app filter persists across tabs.
         vm.selectTab(HubTab.DELETED)
-        assertEquals(HubFilter(HubTab.DELETED, "com.whatsapp"), repo.requestedFilters.last())
+        assertEquals(HubFilter(HubTab.DELETED, setOf("com.whatsapp")), repo.requestedFilters.last())
+    }
+
+    @Test
+    fun filterApps_toggleAndClear() = runTest(dispatcher) {
+        backgroundScope.launch { vm.items.collect {} }
+        backgroundScope.launch { vm.unreadCount.collect {} }
+
+        vm.toggleApp("com.whatsapp")
+        vm.toggleApp("com.google.android.gm")
+        assertEquals(setOf("com.whatsapp", "com.google.android.gm"), vm.packageFilter.value)
+        assertEquals(HubFilter(HubTab.ALL, setOf("com.whatsapp", "com.google.android.gm")), repo.requestedFilters.last())
+        // Items 1 and 3 are unread, one in each ticked app.
+        assertEquals(2, vm.unreadCount.value)
+
+        vm.toggleApp("com.whatsapp")
+        assertEquals(setOf("com.google.android.gm"), vm.packageFilter.value)
+        assertEquals(1, vm.unreadCount.value)
+
+        vm.selectOnlyApp("com.whatsapp")
+        assertEquals(setOf("com.whatsapp"), vm.packageFilter.value)
+
+        vm.clearFilter()
+        assertTrue(vm.packageFilter.value.isEmpty())
+        assertEquals(HubFilter(HubTab.ALL), repo.requestedFilters.last())
+        assertEquals(2, vm.unreadCount.value)
     }
 
     @Test
@@ -183,9 +208,9 @@ class HubViewModelTest {
 
     @Test
     fun markAllRead_onlyForTheFilteredApp() = runTest(dispatcher) {
-        vm.filterApp("com.google.android.gm")
+        vm.toggleApp("com.google.android.gm")
         vm.markAllRead()
-        assertEquals("com.google.android.gm", repo.markAllReadFor)
+        assertEquals(setOf("com.google.android.gm"), repo.markAllReadFor)
     }
 
     @Test
@@ -206,12 +231,12 @@ class HubViewModelTest {
         val live = RecordingLiveActions()
         vm = HubViewModel(repo, live, flowOf(30))
 
-        vm.filterApp("com.whatsapp")
+        vm.toggleApp("com.whatsapp")
         vm.markAllRead()
         // Item 2 is already read, so only item 1 of WhatsApp had a notification to clear.
         assertEquals(listOf("k1"), live.cancelled)
 
-        vm.filterApp(null)
+        vm.clearFilter()
         vm.markAllRead()
         assertEquals(listOf("k1", "k3"), live.cancelled)
     }

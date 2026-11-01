@@ -19,6 +19,12 @@
     <string name="action_filter">Filter by app</string>
     <string name="filter_sheet_title">Show notifications from</string>
     <string name="filter_active">Only %1$s</string>
+    <string name="filter_active_two">%1$s, %2$s</string>
+    <plurals name="filter_active_many">
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
+    </plurals>
+    <string name="action_done">Done</string>
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
     <string name="cd_unread">Unread</string>

@@ -124,9 +124,16 @@ posts is captured, stored locally and shown in one stream.
 - Three top tabs: **All · Unread · Deleted** **(Iwan)**. Switched by tap; not
   swipeable, because row swipes are the primary gesture **(my call, amended
   during implementation)**.
-- Under the tabs, a horizontal chip row: "Every app" then one chip per
-  app that has items, ordered by most recent notification. Tapping a chip
-  filters the stream to that app; the filter persists across tabs.
+- App filter **(Iwan, 2026-11-01: multi-select)**: a filter icon in the
+  top bar opens a sheet with "Every app" then one row per app that has
+  items, most recent first, each with its unread count. App rows tick and
+  untick (several apps at once) and the sheet stays open until Done;
+  "Every app" clears the filter and closes it. The filter persists across
+  tabs and drives the Unread badge and "Mark all read". While it is
+  active a chip under the tabs reads "Only WhatsApp", "WhatsApp, Teams",
+  or "N apps" for three or more; its × clears it. A tap on an app in the
+  counts widget selects just that app. (Search keeps its own
+  single-select chip row.)
 - The list is **BB10 style (Iwan)**: flat, full-width rows, hairline
   dividers, no cards. Grey **date bands** split the stream: "Today" and
   "Yesterday" with the full date on the right, then weekday names for the

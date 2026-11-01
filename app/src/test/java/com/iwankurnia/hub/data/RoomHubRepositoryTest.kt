@@ -205,6 +205,28 @@ class RoomHubRepositoryTest {
     }
 
     @Test
+    fun pagedItems_filtersByPackageSet() = runTest {
+        val mail = ids(repo.capture(notif(key = "m", pkg = "mail", postedAt = 100L))).single()
+        val slack = ids(repo.capture(notif(key = "s", pkg = "slack", postedAt = 200L))).single()
+        val teams = ids(repo.capture(notif(key = "t", pkg = "teams", postedAt = 300L))).single()
+        repo.markRead(listOf(slack))
+        repo.delete(listOf(teams))
+
+        assertEquals(listOf(slack, mail), repo.pagedItems(HubFilter(HubTab.ALL, setOf("mail", "slack"))).asSnapshot().map { it.id })
+        assertEquals(listOf(mail), repo.pagedItems(HubFilter(HubTab.ALL, setOf("mail"))).asSnapshot().map { it.id })
+        assertEquals(listOf(mail), repo.pagedItems(HubFilter(HubTab.UNREAD, setOf("mail", "slack"))).asSnapshot().map { it.id })
+        assertEquals(listOf(teams), repo.pagedItems(HubFilter(HubTab.DELETED, setOf("teams", "mail"))).asSnapshot().map { it.id })
+        assertTrue(repo.pagedItems(HubFilter(HubTab.DELETED, setOf("mail"))).asSnapshot().isEmpty())
+        // The empty set means every app.
+        assertEquals(listOf(slack, mail), all().map { it.id })
+        assertEquals(1, repo.unreadCount(setOf("mail", "slack")).first())
+        assertEquals(0, repo.unreadCount(setOf("slack")).first())
+
+        repo.markAllRead(setOf("slack", "mail"))
+        assertEquals(0, repo.unreadCount().first())
+    }
+
+    @Test
     fun delete_restore_roundTrip_keepsSortAt() = runTest {
         val id = ids(repo.capture(notif(postedAt = 150L))).single()
         now = 9_000L
@@ -255,8 +277,8 @@ class RoomHubRepositoryTest {
             listOf(AppCount("mail", unread = 1, total = 2, lastSeenAt = 300L), AppCount("slack", 1, 1, 200L)),
             counts,
         )
-        assertEquals(1, repo.unreadCount("mail").first())
-        repo.markAllRead(null)
+        assertEquals(1, repo.unreadCount(setOf("mail")).first())
+        repo.markAllRead(emptySet())
         assertEquals(0, repo.unreadCount().first())
     }
 
@@ -289,7 +311,8 @@ class RoomHubRepositoryTest {
         assertTrue(repo.notifKeys(emptyList()).isEmpty())
 
         // Only ACTIVE unread items, optionally for one app.
-        assertEquals(listOf("chat", "m1"), repo.unreadNotifKeys(null).sorted())
-        assertEquals(listOf("m1"), repo.unreadNotifKeys("mail"))
+        assertEquals(listOf("chat", "m1"), repo.unreadNotifKeys(emptySet()).sorted())
+        assertEquals(listOf("m1"), repo.unreadNotifKeys(setOf("mail")))
+        assertEquals(listOf("chat", "m1"), repo.unreadNotifKeys(setOf("mail", "com.whatsapp")).sorted())
     }
 }

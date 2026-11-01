@@ -1,5 +1,6 @@
 package com.iwankurnia.hub.ui.hub
 
+import android.content.Context
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.iwankurnia.hub.data.HubTab
 import com.iwankurnia.hub.data.ItemState
@@ -94,5 +96,13 @@ class HubScreenTest {
         compose.onNodeWithText("Shopee").assertDoesNotExist()
         compose.onNodeWithText("Tokopedia").assertExists()
         compose.onNodeWithText("Today").assertExists()
+    }
+
+    @Test
+    fun filterLabel_oneTwoMany() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        assertEquals("Only WhatsApp", filterLabel(context, listOf("WhatsApp")))
+        assertEquals("Teams, WhatsApp", filterLabel(context, listOf("Teams", "WhatsApp")))
+        assertEquals("3 apps", filterLabel(context, listOf("Gmail", "Teams", "WhatsApp")))
     }
 }

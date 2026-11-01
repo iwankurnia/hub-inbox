@@ -118,7 +118,7 @@ fun HubScreen(
     LaunchedEffect(request) {
         val r = request ?: return@LaunchedEffect
         r.tab?.let(viewModel::selectTab)
-        r.packageName?.let(viewModel::filterApp)
+        r.packageName?.let(viewModel::selectOnlyApp)
         r.itemId?.let(viewModel::open)
         onRequestConsumed()
         if (r.openSearch) onOpenSearch()
@@ -149,7 +149,7 @@ fun HubScreen(
             if (selection.isEmpty()) {
                 HubTopBar(
                     showOverflow = tab == HubTab.UNREAD,
-                    filterActive = packageFilter != null,
+                    filterActive = packageFilter.isNotEmpty(),
                     onOpenFilter = { filterOpen = true },
                     onOpenSearch = onOpenSearch,
                     onOpenSettings = onOpenSettings,
@@ -180,10 +180,10 @@ fun HubScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             HubTabs(tab = tab, unreadCount = unreadCount, onSelect = viewModel::selectTab)
-            packageFilter?.let { pkg ->
+            if (packageFilter.isNotEmpty()) {
                 ActiveFilterChip(
-                    label = remember(pkg) { iconCache.label(pkg) },
-                    onClear = { viewModel.filterApp(null) },
+                    label = filterLabel(context, packageFilter.map(iconCache::label).sorted()),
+                    onClear = viewModel::clearFilter,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 )
             }
@@ -209,7 +209,8 @@ fun HubScreen(
             apps = apps,
             selected = packageFilter,
             iconCache = iconCache,
-            onSelect = viewModel::filterApp,
+            onToggle = viewModel::toggleApp,
+            onClear = viewModel::clearFilter,
             onDismiss = { filterOpen = false },
         )
     }
@@ -484,13 +485,20 @@ private fun undoMessage(context: Context, action: UndoAction): String {
     }
 }
 
+/** "Only WhatsApp" for one app, "WhatsApp, Teams" for two, "N apps" for three or more. */
+internal fun filterLabel(context: Context, labels: List<String>): String = when (labels.size) {
+    1 -> context.getString(R.string.filter_active, labels[0])
+    2 -> context.getString(R.string.filter_active_two, labels[0], labels[1])
+    else -> context.resources.getQuantityString(R.plurals.filter_active_many, labels.size, labels.size)
+}
+
 /** The one chip shown under the tabs while an app filter is active; × clears it. */
 @Composable
 private fun ActiveFilterChip(label: String, onClear: () -> Unit, modifier: Modifier = Modifier) {
     InputChip(
         selected = true,
         onClick = onClear,
-        label = { Text(stringResource(R.string.filter_active, label)) },
+        label = { Text(label) },
         trailingIcon = { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.action_clear)) },
         modifier = modifier,
     )

@@ -22,7 +22,7 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
     val requestedFilters = mutableListOf<HubFilter>()
     val restored = mutableListOf<List<Long>>()
     val purged = mutableListOf<List<Long>>()
-    var markAllReadFor: String? = "none"
+    var markAllReadFor: Set<String>? = null
 
     fun get(id: Long): NotificationItem = store.value.single { it.id == id }
 
@@ -30,8 +30,11 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
         store.value = store.value.map { if (it.id in ids) change(it) else it }
     }
 
+    private fun inApps(item: NotificationItem, packageNames: Set<String>) =
+        packageNames.isEmpty() || item.packageName in packageNames
+
     private fun matches(item: NotificationItem, filter: HubFilter): Boolean {
-        if (filter.packageName != null && item.packageName != filter.packageName) return false
+        if (!inApps(item, filter.packageNames)) return false
         return when (filter.tab) {
             HubTab.ALL -> item.state == ItemState.ACTIVE
             HubTab.UNREAD -> item.state == ItemState.ACTIVE && !item.isRead
@@ -44,8 +47,8 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
         return flowOf(PagingData.from(store.value.filter { matches(it, filter) }.sortedByDescending { it.sortAt }))
     }
 
-    override fun unreadCount(packageName: String?): Flow<Int> =
-        store.map { items -> items.count { matches(it, HubFilter(HubTab.UNREAD, packageName)) } }
+    override fun unreadCount(packageNames: Set<String>): Flow<Int> =
+        store.map { items -> items.count { matches(it, HubFilter(HubTab.UNREAD, packageNames)) } }
 
     override fun appCounts(): Flow<List<AppCount>> = store.map { items ->
         items.filter { it.state == ItemState.ACTIVE }.groupBy { it.packageName }.map { (pkg, list) ->
@@ -56,19 +59,18 @@ class FakeHubRepository(initial: List<NotificationItem> = emptyList(), private v
     override suspend fun item(id: Long): NotificationItem? = store.value.firstOrNull { it.id == id }
     override suspend fun markRead(ids: List<Long>) = update(ids) { it.copy(isRead = true) }
     override suspend fun markUnread(ids: List<Long>) = update(ids) { it.copy(isRead = false) }
-    override suspend fun markAllRead(packageName: String?) {
-        markAllReadFor = packageName
-        store.value = store.value.map { if (packageName == null || it.packageName == packageName) it.copy(isRead = true) else it }
+    override suspend fun markAllRead(packageNames: Set<String>) {
+        markAllReadFor = packageNames
+        store.value = store.value.map { if (inApps(it, packageNames)) it.copy(isRead = true) else it }
     }
 
     override suspend fun markReadByKey(notifKey: String) = Unit
     override suspend fun notifKeys(ids: List<Long>): List<String> =
         store.value.filter { it.id in ids }.map { it.notifKey }.distinct()
 
-    override suspend fun unreadNotifKeys(packageName: String?): List<String> =
-        store.value.filter {
-            it.state == ItemState.ACTIVE && !it.isRead && (packageName == null || it.packageName == packageName)
-        }.map { it.notifKey }.distinct()
+    override suspend fun unreadNotifKeys(packageNames: Set<String>): List<String> =
+        store.value.filter { it.state == ItemState.ACTIVE && !it.isRead && inApps(it, packageNames) }
+            .map { it.notifKey }.distinct()
 
     override suspend fun delete(ids: List<Long>) =
         update(ids) { it.copy(state = ItemState.DELETED, deletedAt = now) }

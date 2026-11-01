@@ -67,11 +67,13 @@ class HubViewModel internal constructor(
     private val _tab = MutableStateFlow(HubTab.ALL)
     val tab: StateFlow<HubTab> = _tab.asStateFlow()
 
-    private val _packageFilter = MutableStateFlow<String?>(null)
-    val packageFilter: StateFlow<String?> = _packageFilter.asStateFlow()
+    private val _packageFilter = MutableStateFlow<Set<String>>(emptySet())
+
+    /** The ticked apps; empty means every app. */
+    val packageFilter: StateFlow<Set<String>> = _packageFilter.asStateFlow()
 
     val items: Flow<PagingData<NotificationItem>> =
-        combine(_tab, _packageFilter) { tab, pkg -> HubFilter(tab, pkg) }
+        combine(_tab, _packageFilter) { tab, packageNames -> HubFilter(tab, packageNames) }
             .distinctUntilChanged()
             .flatMapLatest { repository.pagedItems(it) }
             .cachedIn(viewModelScope)
@@ -107,8 +109,21 @@ class HubViewModel internal constructor(
         _selection.value = emptySet()
     }
 
-    fun filterApp(packageName: String?) {
-        _packageFilter.value = packageName
+    /** Ticks or unticks [packageName] in the app filter. */
+    fun toggleApp(packageName: String) {
+        _packageFilter.update { if (packageName in it) it - packageName else it + packageName }
+        _selection.value = emptySet()
+    }
+
+    /** Narrows the stream to [packageName] alone, as a tap on an app in the counts widget does. */
+    fun selectOnlyApp(packageName: String) {
+        _packageFilter.value = setOf(packageName)
+        _selection.value = emptySet()
+    }
+
+    /** Back to every app. */
+    fun clearFilter() {
+        _packageFilter.value = emptySet()
         _selection.value = emptySet()
     }
 
@@ -138,12 +153,12 @@ class HubViewModel internal constructor(
         viewModelScope.launch { repository.emptyDeleted() }
     }
 
-    /** Marks everything read (for the filtered app, when one is chosen) and clears those system notifications. */
+    /** Marks everything read (in the ticked apps, when any are ticked) and clears those system notifications. */
     fun markAllRead() {
-        val packageName = _packageFilter.value
+        val packageNames = _packageFilter.value
         viewModelScope.launch {
-            val keys = repository.unreadNotifKeys(packageName)
-            repository.markAllRead(packageName)
+            val keys = repository.unreadNotifKeys(packageNames)
+            repository.markAllRead(packageNames)
             keys.forEach(liveActions::cancel)
         }
     }
