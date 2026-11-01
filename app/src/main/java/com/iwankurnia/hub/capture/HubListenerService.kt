@@ -18,6 +18,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 /** Turns every posted notification into Hub items and keeps their live actions (spec 4.1). */
@@ -43,6 +44,9 @@ class HubListenerService : NotificationListenerService() {
     private val events = Channel<suspend () -> Unit>(Channel.UNLIMITED)
 
     private val filter by lazy { NotificationFilter(ownPackage = packageName) }
+
+    /** Keys Hub cancelled for "Keep the status bar clear"; their removal must not drop the content intent. */
+    private val clearedForShade: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     init {
         scope.launch {
@@ -84,8 +88,10 @@ class HubListenerService : NotificationListenerService() {
         val key = sbn?.key ?: return
         // Only the app cancelling it means it was read there; a user swipe leaves the item unread.
         val readInApp = reason == REASON_APP_CANCEL || reason == REASON_APP_CANCEL_ALL
+        val clearedByHub = reason == REASON_LISTENER_CANCEL
         enqueue {
-            registry.unregister(key)
+            // Hub's own shade-clearing cancel keeps the intent so a tap still opens the notification's target.
+            if (!(clearedByHub && clearedForShade.remove(key))) registry.unregister(key)
             if (readInApp) repository.markReadByKey(key)
         }
     }
@@ -116,8 +122,10 @@ class HubListenerService : NotificationListenerService() {
             val captured = mapNotification(sbn, this)
             registry.register(sbn)
             val result = repository.capture(captured)
-            // The registry keeps the content intent, so a tap in Hub still opens the app afterwards.
-            if (result != CaptureResult.Ignored && prefs.clearShade.first()) registry.cancel(sbn.key)
+            if (result != CaptureResult.Ignored && prefs.clearShade.first()) {
+                clearedForShade += sbn.key
+                registry.cancel(sbn.key)
+            }
         }
     }
 

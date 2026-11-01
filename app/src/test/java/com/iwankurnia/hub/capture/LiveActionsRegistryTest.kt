@@ -76,6 +76,19 @@ class LiveActionsRegistryTest {
     }
 
     @Test
+    fun register_beyondTheCap_evictsTheLeastRecentlyUsed() {
+        val intent = TestNotifications.pendingIntent(context, "open")
+        val keys = (1..LiveActionsRegistry.MAX_ENTRIES + 1).map { id ->
+            sbn(builder(context).setContentTitle("n$id").setContentIntent(intent).build(), id = id)
+                .also(registry::register).key
+        }
+
+        assertFalse(registry.openContent(keys.first()))
+        assertTrue(registry.openContent(keys[1]))
+        assertTrue(registry.openContent(keys.last()))
+    }
+
+    @Test
     fun cancel_usesTheListenersCanceller() {
         val cancelled = mutableListOf<String>()
         registry.cancel("before|connect")

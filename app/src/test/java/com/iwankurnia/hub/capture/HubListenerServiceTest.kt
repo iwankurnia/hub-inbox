@@ -158,9 +158,38 @@ class HubListenerServiceTest {
         service.onNotificationPosted(repeat, null)
         settle()
 
-        // Only the captured one leaves the shade, and its content intent is still there for a tap.
+        // Only the captured one leaves the shade.
         assertEquals(listOf(posted.key), cancelled)
+
+        // The system reports Hub's own cancel back; the content intent must survive it for a later tap.
+        service.onNotificationRemoved(posted, null, NotificationListenerService.REASON_LISTENER_CANCEL)
+        settle()
         assertTrue(registry.openContent(posted.key))
+        assertTrue(repository.markedReadKeys.isEmpty())
+    }
+
+    @Test
+    fun removal_userCancel_stillUnregisters() {
+        runBlocking { prefs.setClearShade(true) }
+        val cleared = chat(1)
+        val swiped = chat(2)
+        val readInHub = chat(3)
+        service.onNotificationPosted(cleared, null)
+        service.onNotificationPosted(swiped, null)
+        settle()
+        registry.register(readInHub)
+
+        // A cancel Hub did not make for the shade option (say, an item read in Hub) still drops the intent.
+        service.onNotificationRemoved(readInHub, null, NotificationListenerService.REASON_LISTENER_CANCEL)
+        service.onNotificationRemoved(swiped, null, NotificationListenerService.REASON_CANCEL)
+        service.onNotificationRemoved(cleared, null, NotificationListenerService.REASON_LISTENER_CANCEL)
+        // The skip is one-shot: a second listener cancel of the same key unregisters it.
+        service.onNotificationRemoved(cleared, null, NotificationListenerService.REASON_LISTENER_CANCEL)
+        settle()
+
+        assertFalse(registry.openContent(readInHub.key))
+        assertFalse(registry.openContent(swiped.key))
+        assertFalse(registry.openContent(cleared.key))
     }
 
     @Test
