@@ -38,9 +38,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,8 +57,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -65,6 +69,7 @@ import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.AppCount
 import com.iwankurnia.hub.icon.AppIconCache
 import com.iwankurnia.hub.ui.search.AppIconImage
+import java.util.Locale
 
 private const val APPS_SHOWN = 5
 
@@ -97,12 +102,17 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+                title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
+                expandedHeight = 56.dp,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
         },
     ) { padding ->
@@ -147,7 +157,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     title = stringResource(R.string.settings_hide_silent),
                     subtitle = stringResource(R.string.settings_hide_silent_summary),
                     onClick = { viewModel.setHideSilent(!hideSilent) },
-                    trailing = { Switch(checked = hideSilent, onCheckedChange = viewModel::setHideSilent) },
+                    trailing = { Switch(checked = hideSilent, onCheckedChange = viewModel::setHideSilent, colors = hubSwitchColors()) },
                 )
                 Hairline()
                 SettingsRow(
@@ -155,7 +165,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     title = stringResource(R.string.settings_clear_shade),
                     subtitle = stringResource(R.string.settings_clear_shade_summary),
                     onClick = { viewModel.setClearShade(!clearShade) },
-                    trailing = { Switch(checked = clearShade, onCheckedChange = viewModel::setClearShade) },
+                    trailing = { Switch(checked = clearShade, onCheckedChange = viewModel::setClearShade, colors = hubSwitchColors()) },
                 )
                 Hairline()
                 SettingsRow(
@@ -163,7 +173,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     title = stringResource(R.string.settings_unread_badge),
                     subtitle = stringResource(R.string.settings_unread_badge_summary),
                     onClick = { viewModel.setUnreadBadge(!unreadBadge) },
-                    trailing = { Switch(checked = unreadBadge, onCheckedChange = viewModel::setUnreadBadge) },
+                    trailing = { Switch(checked = unreadBadge, onCheckedChange = viewModel::setUnreadBadge, colors = hubSwitchColors()) },
                 )
             }
 
@@ -197,6 +207,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                             checked = dynamicColor && dynamicAvailable,
                             onCheckedChange = viewModel::setDynamicColor,
                             enabled = dynamicAvailable,
+                            colors = hubSwitchColors(),
                         )
                     },
                 )
@@ -264,16 +275,19 @@ private fun AppRow(count: AppCount, included: Boolean, iconCache: AppIconCache, 
             stringResource(R.string.settings_app_hidden)
         },
         onClick = { onToggle(!included) },
-        trailing = { Switch(checked = included, onCheckedChange = onToggle) },
+        trailing = { Switch(checked = included, onCheckedChange = onToggle, colors = hubSwitchColors()) },
     )
 }
 
 @Composable
 private fun SectionLabel(text: String) {
     Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
+        text = text.uppercase(Locale.getDefault()),
+        fontSize = 11.sp,
+        lineHeight = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.8.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 8.dp),
     )
 }
@@ -281,7 +295,7 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun Group(content: @Composable () -> Unit) {
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -291,13 +305,21 @@ private fun Group(content: @Composable () -> Unit) {
 
 @Composable
 private fun Hairline() {
-    HorizontalDivider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.outlineVariant)
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
 private fun Chevron() {
     Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
 }
+
+/** Switches in the text colour: an onSurface track with a surface thumb when on. */
+@Composable
+private fun hubSwitchColors(): SwitchColors = SwitchDefaults.colors(
+    checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+    checkedThumbColor = MaterialTheme.colorScheme.surface,
+    checkedIconColor = MaterialTheme.colorScheme.onSurface,
+)
 
 /** One row of a grouped container: leading icon, title and subtitle, optional trailing control. */
 @Composable

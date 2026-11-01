@@ -12,8 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -29,7 +29,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.iwankurnia.hub.R
 import com.iwankurnia.hub.data.AppCount
 import com.iwankurnia.hub.icon.AppIconCache
@@ -53,7 +55,11 @@ fun AppFilterSheet(
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val close: () -> Unit = { scope.launch { state.hide() }.invokeOnCompletion { onDismiss() } }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = state,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
         Column(modifier = Modifier.navigationBarsPadding()) {
             Text(
                 text = stringResource(R.string.filter_sheet_title),
@@ -67,7 +73,7 @@ fun AppFilterSheet(
                         selected = selected.isEmpty(),
                         unread = apps.sumOf { it.unread },
                         leading = { Icon(Icons.Rounded.Apps, contentDescription = null) },
-                        trailing = { if (selected.isEmpty()) Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailing = { if (selected.isEmpty()) Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
                         onClick = { onClear(); close() },
                     )
                 }
@@ -79,7 +85,16 @@ fun AppFilterSheet(
                         selected = ticked,
                         unread = app.unread,
                         leading = { AppIcon(app.packageName, iconCache, size = 28.dp) },
-                        trailing = { Checkbox(checked = ticked, onCheckedChange = { onToggle(app.packageName) }) },
+                        trailing = {
+                            Checkbox(
+                                checked = ticked,
+                                onCheckedChange = { onToggle(app.packageName) },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = MaterialTheme.colorScheme.onSurface,
+                                    checkmarkColor = MaterialTheme.colorScheme.surface,
+                                ),
+                            )
+                        },
                         onClick = { onToggle(app.packageName) },
                     )
                 }
@@ -105,12 +120,19 @@ private fun FilterRow(
         leadingContent = leading,
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (unread > 0) Badge { Text(unread.toString()) }
+                if (unread > 0) {
+                    Text(
+                        text = unread.toString(),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 trailing()
             }
         },
         colors = ListItemDefaults.colors(
-            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = if (selected) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface,
         ),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     )

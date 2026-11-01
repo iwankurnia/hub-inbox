@@ -10,7 +10,7 @@
     <FrameLayout
         android:layout_width="3dp"
         android:layout_height="34dp"
-        android:background="?android:attr/colorAccent" />
+        android:background="?android:attr/textColorPrimary" />
 
     <FrameLayout
         android:layout_width="28dp"

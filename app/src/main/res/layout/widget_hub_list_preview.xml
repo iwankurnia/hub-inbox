@@ -20,7 +20,7 @@
             android:layout_height="20dp"
             android:importantForAccessibility="no"
             android:src="@drawable/ic_stat_hub"
-            android:tint="?android:attr/colorAccent" />
+            android:tint="?android:attr/textColorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"

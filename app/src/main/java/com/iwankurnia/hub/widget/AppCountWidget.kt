@@ -139,7 +139,7 @@ private fun Total(total: Int) {
             provider = ImageProvider(R.drawable.ic_stat_hub),
             contentDescription = null,
             modifier = GlanceModifier.size(20.dp),
-            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+            colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurface),
         )
         Spacer(modifier = GlanceModifier.width(6.dp))
         Text(
@@ -197,7 +197,7 @@ private fun AppIcon(app: AppTile, alpha: Float) {
     }
 }
 
-/** An 18dp primary badge inside a 2dp ring of the surface colour, so it stands off the icon. */
+/** An 18dp onSurface badge inside a 2dp ring of the surface colour, so it stands off the icon. */
 @Composable
 private fun Badge(unread: Int) {
     val label = countLabel(unread)
@@ -210,13 +210,13 @@ private fun Badge(unread: Int) {
     ) {
         Box(
             modifier = (if (singleDigit) GlanceModifier.fillMaxSize() else GlanceModifier.fillMaxHeight().padding(horizontal = 4.dp))
-                .background(GlanceTheme.colors.primary)
+                .background(GlanceTheme.colors.onSurface)
                 .cornerRadius(7.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = label,
-                style = TextStyle(color = GlanceTheme.colors.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(color = GlanceTheme.colors.surface, fontSize = 10.sp, fontWeight = FontWeight.Bold),
             )
         }
     }

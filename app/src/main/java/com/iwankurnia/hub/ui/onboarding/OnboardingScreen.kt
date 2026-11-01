@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -107,13 +108,13 @@ fun OnboardingScreen(onDone: () -> Unit, viewModel: SettingsViewModel = hiltView
                 Box(
                     modifier = Modifier
                         .size(96.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(28.dp)),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(28.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_stat_hub),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(56.dp),
                     )
                 }
@@ -132,7 +133,7 @@ fun OnboardingScreen(onDone: () -> Unit, viewModel: SettingsViewModel = hiltView
                 )
                 Spacer(modifier = Modifier.height(28.dp))
                 Card(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -147,6 +148,10 @@ fun OnboardingScreen(onDone: () -> Unit, viewModel: SettingsViewModel = hiltView
             }
             Button(
                 onClick = { openListenerSettings(context) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onSurface,
+                    contentColor = MaterialTheme.colorScheme.surface,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 24.dp)
