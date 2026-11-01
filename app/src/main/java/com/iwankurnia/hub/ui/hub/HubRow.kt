@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -225,7 +226,13 @@ fun AppIcon(packageName: String, iconCache: AppIconCache, size: Dp, greyscale: B
  */
 @Composable
 fun rememberAppIcon(packageName: String, iconCache: AppIconCache, sizePx: Int): ImageBitmap? {
-    val icon by produceState<ImageBitmap?>(initialValue = null, packageName, sizePx) {
+    // An icon drawn before shows on the first frame; only an uncached one passes through the letter tile.
+    val cached = remember(packageName, sizePx) { iconCache.cachedBitmap(packageName, sizePx)?.asImageBitmap() }
+    val icon by produceState(initialValue = cached, packageName, sizePx) {
+        if (cached != null) {
+            value = cached
+            return@produceState
+        }
         withContext(Dispatchers.IO) { iconCache.icon(packageName) } ?: return@produceState
         value = iconCache.iconBitmapOnMain(packageName, sizePx)?.asImageBitmap()
     }
