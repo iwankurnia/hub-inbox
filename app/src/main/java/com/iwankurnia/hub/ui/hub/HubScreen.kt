@@ -11,31 +11,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.MarkEmailUnread
-import androidx.compose.material.icons.rounded.Inbox
-import androidx.compose.material3.LeadingIconTab
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material3.InputChip
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -44,6 +42,8 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,11 +54,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,6 +79,7 @@ import com.iwankurnia.hub.data.NotificationItem
 import com.iwankurnia.hub.icon.AppIconCache
 import com.iwankurnia.hub.ui.launchApp
 import java.time.ZoneId
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 /**
@@ -148,7 +155,7 @@ fun HubScreen(
         topBar = {
             if (selection.isEmpty()) {
                 HubTopBar(
-                    showOverflow = tab == HubTab.UNREAD,
+                    canMarkAllRead = tab != HubTab.DELETED && unreadCount > 0,
                     filterActive = packageFilter.isNotEmpty(),
                     onOpenFilter = { filterOpen = true },
                     onOpenSearch = onOpenSearch,
@@ -176,7 +183,7 @@ fun HubScreen(
             }
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        containerColor = MaterialTheme.colorScheme.surface,
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             HubTabs(tab = tab, unreadCount = unreadCount, onSelect = viewModel::selectTab)
@@ -187,7 +194,6 @@ fun HubScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             if (tab == HubTab.DELETED) {
                 DeletedBanner(keepDeletedDays = keepDeletedDays, onEmptyNow = { confirmEmpty = true })
             }
@@ -233,9 +239,16 @@ fun HubScreen(
     }
 }
 
+private val TopBarHeight = 56.dp
+
+/** Bar icons sit a step quieter than the title (the mockup's #44474E on light). */
+private const val BarIconAlpha = 0.8f
+
+/** The compact 56dp bar: "Hub", then filter (dotted while a filter is on), search and the overflow. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HubTopBar(
-    showOverflow: Boolean,
+    canMarkAllRead: Boolean,
     filterActive: Boolean,
     onOpenFilter: () -> Unit,
     onOpenSearch: () -> Unit,
@@ -243,78 +256,105 @@ private fun HubTopBar(
     onMarkAllRead: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .statusBarsPadding()
-            .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            text = stringResource(R.string.hub_title),
-            style = MaterialTheme.typography.displaySmall,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onOpenFilter) {
-            BadgedBox(badge = { if (filterActive) Badge() }) {
-                Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter))
+    val colors = MaterialTheme.colorScheme
+    TopAppBar(
+        title = { Text(stringResource(R.string.hub_title), style = MaterialTheme.typography.titleLarge) },
+        actions = {
+            IconButton(onClick = onOpenFilter) {
+                BadgedBox(badge = { if (filterActive) Badge() }) {
+                    Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.action_filter))
+                }
             }
-        }
-        IconButton(onClick = onOpenSearch) {
-            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.action_search))
-        }
-        IconButton(onClick = onOpenSettings) {
-            Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.action_settings))
-        }
-        if (showOverflow) {
+            IconButton(onClick = onOpenSearch) {
+                Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.action_search))
+            }
             Box {
                 IconButton(onClick = { menuOpen = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    if (canMarkAllRead) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_mark_all_read)) },
+                            onClick = {
+                                menuOpen = false
+                                onMarkAllRead()
+                            },
+                        )
+                    }
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.action_mark_all_read)) },
+                        text = { Text(stringResource(R.string.action_settings)) },
                         onClick = {
                             menuOpen = false
-                            onMarkAllRead()
+                            onOpenSettings()
                         },
                     )
                 }
             }
-        }
-    }
+        },
+        expandedHeight = TopBarHeight,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = colors.surface,
+            scrolledContainerColor = colors.surface,
+            titleContentColor = colors.onSurface,
+            actionIconContentColor = colors.onSurface.copy(alpha = BarIconAlpha),
+        ),
+    )
 }
 
+/** Left-aligned text tabs: the active one in onSurface over a 2dp line, the unread count as a plain number. */
 @Composable
 private fun HubTabs(tab: HubTab, unreadCount: Int, onSelect: (HubTab) -> Unit) {
+    val colors = MaterialTheme.colorScheme
     val tabs = listOf(
-        Triple(HubTab.ALL, R.string.tab_all, Icons.Rounded.Inbox),
-        Triple(HubTab.UNREAD, R.string.tab_unread, Icons.Rounded.MarkEmailUnread),
-        Triple(HubTab.DELETED, R.string.tab_deleted, Icons.Rounded.Delete),
+        HubTab.ALL to R.string.tab_all,
+        HubTab.UNREAD to R.string.tab_unread,
+        HubTab.DELETED to R.string.tab_deleted,
     )
-    PrimaryTabRow(
-        selectedTabIndex = tabs.indexOfFirst { it.first == tab },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        tabs.forEach { (value, label, icon) ->
-            LeadingIconTab(
-                selected = value == tab,
-                onClick = { onSelect(value) },
-                icon = { Icon(icon, contentDescription = null) },
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(stringResource(label))
-                        if (value == HubTab.UNREAD && unreadCount > 0) {
-                            Badge(
-                                containerColor = if (value == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                contentColor = if (value == tab) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                            ) { Text(unreadCount.toString()) }
+    Column(modifier = Modifier.fillMaxWidth().background(colors.surface)) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp).selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(22.dp),
+        ) {
+            tabs.forEach { (value, label) ->
+                val selected = value == tab
+                val indicator = colors.onSurface
+                Row(
+                    modifier = Modifier
+                        .selectable(selected = selected, onClick = { onSelect(value) }, role = Role.Tab)
+                        .drawBehind {
+                            if (selected) {
+                                val height = 2.dp.toPx()
+                                drawRoundRect(
+                                    color = indicator,
+                                    topLeft = Offset(0f, size.height - height),
+                                    size = Size(size.width, height),
+                                    cornerRadius = CornerRadius(height, height),
+                                )
+                            }
                         }
+                        .padding(start = 2.dp, end = 2.dp, top = 10.dp, bottom = 11.dp),
+                ) {
+                    Text(
+                        text = stringResource(label),
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                    if (value == HubTab.UNREAD && unreadCount > 0) {
+                        Text(
+                            text = unreadCount.toString(),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = colors.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 5.dp).alignByBaseline(),
+                        )
                     }
-                },
-            )
+                }
+            }
         }
+        HorizontalDivider(thickness = 1.dp, color = colors.outlineVariant)
     }
 }
 
@@ -336,7 +376,10 @@ private fun DeletedBanner(keepDeletedDays: Int, onEmptyNow: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onEmptyNow) {
+            TextButton(
+                onClick = onEmptyNow,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
+            ) {
                 Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(stringResource(R.string.action_empty_now), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp))
             }
@@ -377,6 +420,9 @@ private fun HubList(
             }
             item(key = peeked?.let { "row-$tab-${it.id}" } ?: "placeholder-$index", contentType = "row") {
                 val item = items[index] ?: return@item
+                // A hairline between rows of one band; none above the next band or at the end.
+                val next = nextVisible(items, index, hiddenIds)
+                val divider = next != null && DateBands.sameBand(bandTime(item), bandTime(next), nowMs, zone)
                 SwipeRow(
                     readEnabled = tab != HubTab.DELETED,
                     isRead = item.isRead,
@@ -394,6 +440,7 @@ private fun HubList(
                         onClick = { if (selecting) viewModel.toggleSelect(item.id) else viewModel.open(item.id) },
                         onLongClick = { viewModel.toggleSelect(item.id) },
                         onRestore = { viewModel.restore(item.id) },
+                        showDivider = divider,
                     )
                 }
             }
@@ -412,30 +459,46 @@ private fun previousVisible(items: LazyPagingItems<NotificationItem>, index: Int
     return null
 }
 
+/** The nearest row below [index] that is not hidden pending a purge; null at the end or before a placeholder. */
+private fun nextVisible(items: LazyPagingItems<NotificationItem>, index: Int, hiddenIds: Set<Long>): NotificationItem? {
+    var i = index + 1
+    while (i < items.itemCount) {
+        val candidate = items.peek(i) ?: return null
+        if (candidate.id !in hiddenIds) return candidate
+        i++
+    }
+    return null
+}
+
 /** Deleted items band by when they were deleted, everything else by sort time. */
 private fun bandTime(item: NotificationItem): Long =
     if (item.state == ItemState.DELETED) item.deletedAt ?: item.sortAt else item.sortAt
 
+/** A grey strip: the band label in letter-spaced capitals on the left, the short date on the right. */
 @Composable
 private fun BandHeader(band: DateBand) {
+    val colour = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 16.dp, vertical = 5.dp),
+            .padding(horizontal = 16.dp, vertical = 7.dp),
     ) {
         Text(
-            text = band.label,
-            style = MaterialTheme.typography.labelSmall,
+            text = band.label.uppercase(Locale.getDefault()),
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            letterSpacing = 0.8.sp,
+            color = colour,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = band.detail,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = colour,
         )
     }
 }
@@ -500,6 +563,12 @@ private fun ActiveFilterChip(label: String, onClear: () -> Unit, modifier: Modif
         onClick = onClear,
         label = { Text(label) },
         trailingIcon = { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.action_clear)) },
+        colors = InputChipDefaults.inputChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+            selectedTrailingIconColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        border = null,
         modifier = modifier,
     )
 }

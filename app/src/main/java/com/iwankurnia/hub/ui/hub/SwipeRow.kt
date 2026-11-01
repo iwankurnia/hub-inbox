@@ -104,7 +104,7 @@ private fun SwipeReveal(direction: SwipeToDismissBoxValue, armed: Boolean, toUnr
     val background = when {
         reading -> HubColors.readReveal
         deleting -> MaterialTheme.colorScheme.errorContainer
-        else -> MaterialTheme.colorScheme.surfaceContainerLowest
+        else -> MaterialTheme.colorScheme.surface
     }
     val foreground = if (reading) HubColors.onReadReveal else MaterialTheme.colorScheme.onErrorContainer
     Row(

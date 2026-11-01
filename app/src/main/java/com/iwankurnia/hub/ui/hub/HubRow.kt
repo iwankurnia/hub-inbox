@@ -59,12 +59,13 @@ import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val IconSize = 34.dp
-private val IconShape = RoundedCornerShape(9.dp)
+private val IconSize = 32.dp
+private val IconShape = RoundedCornerShape(8.dp)
 
 /**
- * One BB10-style row: 4dp unread bar, 34dp app icon (or a tick when selected), title and time,
- * one-line preview, then the Restore chip in Deleted.
+ * One BB10-style row: 3dp unread bar, 32dp app icon (or a tick when selected), title and time,
+ * one-line preview, then the Restore chip in Deleted. [showDivider] draws the hairline below it,
+ * off for the last row of a band.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -78,11 +79,12 @@ fun HubRow(
     onLongClick: () -> Unit,
     onRestore: () -> Unit,
     modifier: Modifier = Modifier,
+    showDivider: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val unread = !item.isRead && item.state == ItemState.ACTIVE
     val deleted = item.state == ItemState.DELETED
-    val barColour = if (unread) colors.primary else Color.Transparent
+    val barColour = if (unread) colors.onSurface else Color.Transparent
     val unreadDescription = stringResource(R.string.cd_unread)
     val selectedDescription = stringResource(R.string.cd_selected)
     val state = listOfNotNull(
@@ -95,13 +97,13 @@ fun HubRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .background(if (selected) colors.primaryContainer else colors.surfaceContainerLowest)
+                .background(if (selected) colors.surfaceContainerHigh else colors.surface)
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
                 .semantics { stateDescription = state },
         ) {
             Box(
                 modifier = Modifier
-                    .width(4.dp)
+                    .width(3.dp)
                     .fillMaxHeight()
                     .background(barColour),
             )
@@ -109,17 +111,17 @@ fun HubRow(
                 modifier = Modifier
                     .weight(1f)
                     .alpha(if (deleted) 0.75f else 1f)
-                    .padding(start = 8.dp, end = 16.dp, top = 9.dp, bottom = 9.dp),
+                    .padding(start = 12.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (selected) SelectedTick() else AppIcon(item.packageName, iconCache, IconSize, greyscale = item.isRead)
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row {
                         Text(
                             text = item.title,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                            modifier = Modifier.weight(1f).alignByBaseline(),
+                            style = TitleStyle(),
                             fontWeight = if (unread) FontWeight.Bold else FontWeight.Normal,
                             color = colors.onSurface,
                             maxLines = 1,
@@ -130,13 +132,15 @@ fun HubRow(
                             text = DateBands.rowTime(if (deleted) item.deletedAt ?: item.sortAt else item.sortAt, nowMs, zone),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (unread) colors.primary else colors.onSurfaceVariant,
+                            color = if (unread) colors.onSurface else colors.secondary,
+                            modifier = Modifier.alignByBaseline(),
                         )
                     }
                     Text(
                         text = preview(item),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
-                        color = colors.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp, lineHeight = 17.sp),
+                        color = if (unread) colors.onSurface.copy(alpha = UnreadPreviewAlpha) else colors.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 1.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -146,9 +150,16 @@ fun HubRow(
                 }
             }
         }
-        HorizontalDivider(thickness = Dp.Hairline, color = colors.outlineVariant)
+        if (showDivider) HorizontalDivider(thickness = 1.dp, color = colors.outlineVariant)
     }
 }
+
+/** Unread previews: the text colour at 85 %, a step above read previews. */
+private const val UnreadPreviewAlpha = 0.85f
+
+/** The row title: body large tightened to 14sp. */
+@Composable
+private fun TitleStyle() = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp, lineHeight = 19.sp, letterSpacing = 0.sp)
 
 private fun preview(item: NotificationItem): String =
     if (item.sender.isNullOrBlank()) item.text else "${item.sender}: ${item.text}"
@@ -159,10 +170,10 @@ private fun SelectedTick() {
         modifier = Modifier
             .size(IconSize)
             .clip(IconShape)
-            .background(MaterialTheme.colorScheme.primary),
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+        Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -177,9 +188,9 @@ private fun RestoreChip(onRestore: () -> Unit) {
             shape = RoundedCornerShape(13.dp),
             border = null,
             colors = AssistChipDefaults.assistChipColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                leadingIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                leadingIconContentColor = MaterialTheme.colorScheme.onSurface,
             ),
         )
     }

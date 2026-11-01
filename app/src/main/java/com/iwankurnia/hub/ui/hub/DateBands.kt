@@ -12,8 +12,9 @@ data class DateBand(val label: String, val detail: String)
 
 /**
  * Date bands and row times for the Hub list. Each calendar day is its own band: "Today" and
- * "Yesterday" with the full date, weekday names for the rest of the last week, then plain dates
- * with the year on the right. Future instants count as today.
+ * "Yesterday" with the short date ("Sun 1 Nov"), weekday names with the day and short month for
+ * the rest of the last week, then plain dates with the year on the right. Future instants count
+ * as today. The screen draws the label in capitals.
  */
 object DateBands {
 
@@ -30,12 +31,13 @@ object DateBands {
     ): DateBand {
         val date = bandDate(epochMs, nowMs, zone)
         val daysAgo = daysAgo(date, nowMs, zone)
-        val fullDate = DateTimeFormatter.ofPattern("EEEE, d MMMM", locale)
+        val shortDate = DateTimeFormatter.ofPattern("EEE d MMM", locale)
+        val dayShortMonth = DateTimeFormatter.ofPattern("d MMM", locale)
         val dayMonth = DateTimeFormatter.ofPattern("d MMMM", locale)
         return when {
-            daysAgo == 0L -> DateBand(todayLabel, date.format(fullDate))
-            daysAgo == 1L -> DateBand(yesterdayLabel, date.format(fullDate))
-            daysAgo <= WEEK_DAYS -> DateBand(date.format(DateTimeFormatter.ofPattern("EEEE", locale)), date.format(dayMonth))
+            daysAgo == 0L -> DateBand(todayLabel, date.format(shortDate))
+            daysAgo == 1L -> DateBand(yesterdayLabel, date.format(shortDate))
+            daysAgo <= WEEK_DAYS -> DateBand(date.format(DateTimeFormatter.ofPattern("EEEE", locale)), date.format(dayShortMonth))
             else -> DateBand(date.format(dayMonth), date.year.toString())
         }
     }

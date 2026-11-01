@@ -19,10 +19,10 @@ class DateBandsTest {
 
     @Test
     fun today_yesterday_weekday_older() {
-        assertEquals(DateBand("Today", "Sunday, 1 November"), DateBands.forInstant(at(2026, 11, 1, 0, 5), now, zone))
-        assertEquals(DateBand("Yesterday", "Saturday, 31 October"), DateBands.forInstant(at(2026, 10, 31, 18, 31), now, zone))
-        assertEquals(DateBand("Thursday", "29 October"), DateBands.forInstant(at(2026, 10, 29, 21, 14), now, zone))
-        assertEquals(DateBand("Monday", "26 October"), DateBands.forInstant(at(2026, 10, 26, 8, 0), now, zone))
+        assertEquals(DateBand("Today", "Sun 1 Nov"), DateBands.forInstant(at(2026, 11, 1, 0, 5), now, zone))
+        assertEquals(DateBand("Yesterday", "Sat 31 Oct"), DateBands.forInstant(at(2026, 10, 31, 18, 31), now, zone))
+        assertEquals(DateBand("Thursday", "29 Oct"), DateBands.forInstant(at(2026, 10, 29, 21, 14), now, zone))
+        assertEquals(DateBand("Monday", "26 Oct"), DateBands.forInstant(at(2026, 10, 26, 8, 0), now, zone))
         assertEquals(DateBand("25 October", "2026"), DateBands.forInstant(at(2026, 10, 25, 23, 59), now, zone))
         assertEquals(DateBand("24 December", "2025"), DateBands.forInstant(at(2025, 12, 24, 12, 0), now, zone))
     }
