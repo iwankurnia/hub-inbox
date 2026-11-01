@@ -20,7 +20,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -29,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.iwankurnia.hub.R
 import com.iwankurnia.hub.ui.theme.HubColors
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -40,28 +44,45 @@ import kotlinx.coroutines.launch
 @Composable
 fun SwipeRow(
     readEnabled: Boolean,
-    stayAfterRead: Boolean,
+    @Suppress("UNUSED_PARAMETER") stayAfterRead: Boolean,
     isRead: Boolean = false,
     gesturesEnabled: Boolean,
     onRead: () -> Unit,
     onDelete: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val state = rememberSwipeToDismissBoxState()
     val scope = rememberCoroutineScope()
+    val currentOnRead by rememberUpdatedState(onRead)
+    // confirmValueChange fires several times while one gesture settles; one toggle per gesture.
+    val togglePending = remember { AtomicBoolean(false) }
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.StartToEnd) {
+                // The toggle is performed here and the dismissed state is refused, so the row springs
+                // back and the callback can never replay when the list changes later. A short pause
+                // lets the reveal register before the row's look changes.
+                if (togglePending.compareAndSet(false, true)) {
+                    scope.launch {
+                        try {
+                            delay(TOGGLE_DELAY_MS)
+                            currentOnRead()
+                        } finally {
+                            togglePending.set(false)
+                        }
+                    }
+                }
+                false
+            } else {
+                true
+            }
+        },
+    )
     SwipeToDismissBox(
         state = state,
         enableDismissFromStartToEnd = readEnabled,
         gesturesEnabled = gesturesEnabled,
         onDismiss = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    onRead()
-                    if (stayAfterRead) scope.launch { state.reset() }
-                }
-                SwipeToDismissBoxValue.EndToStart -> onDelete()
-                SwipeToDismissBoxValue.Settled -> Unit
-            }
+            if (value == SwipeToDismissBoxValue.EndToStart) onDelete()
         },
         backgroundContent = {
             SwipeReveal(direction = state.dismissDirection, armed = state.targetValue != SwipeToDismissBoxValue.Settled, toUnread = isRead)
@@ -112,3 +133,6 @@ private fun SwipeReveal(direction: SwipeToDismissBoxValue, armed: Boolean, toUnr
         }
     }
 }
+
+/** Pause between the swipe settling and the read state flipping, so the reveal is seen. */
+private const val TOGGLE_DELAY_MS = 350L

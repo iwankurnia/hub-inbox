@@ -48,6 +48,9 @@ class SwipeRowTest {
 
         compose.onNodeWithTag("row").performTouchInput { swipeRight() }
         compose.waitForIdle()
+        // The toggle is applied a moment after the swipe settles.
+        compose.mainClock.advanceTimeBy(600)
+        compose.waitForIdle()
 
         assertEquals(1, reads)
         assertEquals(0, deletes)
@@ -58,6 +61,9 @@ class SwipeRowTest {
         show(readEnabled = false)
 
         compose.onNodeWithTag("row").performTouchInput { swipeRight() }
+        compose.waitForIdle()
+        // The toggle is applied a moment after the swipe settles.
+        compose.mainClock.advanceTimeBy(600)
         compose.waitForIdle()
 
         assertEquals(0, reads)
