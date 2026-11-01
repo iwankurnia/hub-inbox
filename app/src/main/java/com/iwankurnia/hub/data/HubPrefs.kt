@@ -30,6 +30,9 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
     /** Remove each notification from the shade once Hub has captured it. */
     val clearShade: Flow<Boolean> = store.data.map { it[CLEAR_SHADE] ?: false }
 
+    /** Show the unread count on the launcher icon through a silent Hub notification. */
+    val unreadBadge: Flow<Boolean> = store.data.map { it[UNREAD_BADGE] ?: true }
+
     /** At most [MAX_RECENT_SEARCHES], newest first. */
     val recentSearches: Flow<List<String>> = store.data.map { decode(it[RECENT_SEARCHES]) }
     val onboardingDone: Flow<Boolean> = store.data.map { it[ONBOARDING_DONE] ?: false }
@@ -38,6 +41,7 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
     suspend fun setKeepDeletedDays(value: Int) = set(KEEP_DELETED_DAYS, value)
     suspend fun setDynamicColor(value: Boolean) = set(DYNAMIC_COLOR, value)
     suspend fun setClearShade(value: Boolean) = set(CLEAR_SHADE, value)
+    suspend fun setUnreadBadge(value: Boolean) = set(UNREAD_BADGE, value)
     suspend fun setOnboardingDone(value: Boolean) = set(ONBOARDING_DONE, value)
 
     /** Moves [query] to the front of the recent list; blank queries are ignored. */
@@ -62,6 +66,7 @@ class HubPrefs internal constructor(private val store: DataStore<Preferences>) {
         val KEEP_DELETED_DAYS = intPreferencesKey("keep_deleted_days")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val CLEAR_SHADE = booleanPreferencesKey("clear_shade")
+        val UNREAD_BADGE = booleanPreferencesKey("unread_badge")
         val RECENT_SEARCHES = stringPreferencesKey("recent_searches")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
 

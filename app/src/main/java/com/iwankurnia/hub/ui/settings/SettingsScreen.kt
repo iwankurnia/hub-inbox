@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.AutoDelete
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ClearAll
+import androidx.compose.material.icons.rounded.MarkEmailUnread
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Palette
@@ -86,6 +87,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
     val keepDays by viewModel.keepDeletedDays.collectAsStateWithLifecycle()
     val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
     val clearShade by viewModel.clearShade.collectAsStateWithLifecycle()
+    val unreadBadge by viewModel.unreadBadge.collectAsStateWithLifecycle()
     val iconCache = remember { AppIconCache(context.applicationContext) }
     var showAllApps by rememberSaveable { mutableStateOf(false) }
     var keepDialog by rememberSaveable { mutableStateOf(false) }
@@ -154,6 +156,14 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     subtitle = stringResource(R.string.settings_clear_shade_summary),
                     onClick = { viewModel.setClearShade(!clearShade) },
                     trailing = { Switch(checked = clearShade, onCheckedChange = viewModel::setClearShade) },
+                )
+                Hairline()
+                SettingsRow(
+                    icon = Icons.Rounded.MarkEmailUnread,
+                    title = stringResource(R.string.settings_unread_badge),
+                    subtitle = stringResource(R.string.settings_unread_badge_summary),
+                    onClick = { viewModel.setUnreadBadge(!unreadBadge) },
+                    trailing = { Switch(checked = unreadBadge, onCheckedChange = viewModel::setUnreadBadge) },
                 )
             }
 

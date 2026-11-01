@@ -92,6 +92,8 @@
     <string name="settings_hide_silent_summary">Ones Android shows silently</string>
     <string name="settings_clear_shade">Keep the status bar clear</string>
     <string name="settings_clear_shade_summary">Hub removes each notification from the shade as soon as it has captured it</string>
+    <string name="settings_unread_badge">Unread badge on the app icon</string>
+    <string name="settings_unread_badge_summary">Shown through a silent Hub notification</string>
     <string name="settings_section_system">System</string>
     <string name="settings_notification_access">Notification access</string>
     <string name="settings_access_granted">Granted</string>
@@ -119,6 +121,13 @@
     <string name="widget_open_hub">Open Hub</string>
     <string name="widget_empty">No unread notifications</string>
     <string name="widget_unread_total">%1$d unread</string>
+
+    <!-- Launcher badge (spec 4.12) -->
+    <string name="badge_channel_name">Unread count</string>
+    <plurals name="badge_unread_count">
+        <item quantity="one">%1$d unread notification</item>
+        <item quantity="other">%1$d unread notifications</item>
+    </plurals>
 
     <!-- Notification listener -->
     <string name="listener_service_label">Hub notification capture</string>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.iwankurnia.hub.badge.UnreadBadge
 import com.iwankurnia.hub.data.HubPrefs
 import com.iwankurnia.hub.data.HubRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,6 +29,8 @@ class HubListenerService : NotificationListenerService() {
     @Inject lateinit var prefs: HubPrefs
 
     @Inject lateinit var registry: LiveActionsRegistry
+
+    @Inject lateinit var unreadBadge: UnreadBadge
 
     /** Seam for tests; production always uses [NotificationMapper]. */
     internal var mapNotification: (StatusBarNotification, Context) -> CapturedNotification = NotificationMapper::map
@@ -54,6 +57,12 @@ class HubListenerService : NotificationListenerService() {
                 }
             }
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        // The system may start the listener without the app's activity; the badge follows the count from here too.
+        unreadBadge.start()
     }
 
     override fun onListenerConnected() {

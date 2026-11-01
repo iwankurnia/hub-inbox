@@ -1,5 +1,11 @@
 package com.iwankurnia.hub.ui.onboarding
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -48,20 +56,37 @@ import kotlinx.coroutines.launch
 
 /**
  * First run (mockup screen 0): explains why Hub needs notification access and links to the system
- * page. Once access is granted, calls [onDone].
+ * page. Once access is granted, asks to post its own notification (API 33+; it carries the launcher
+ * badge, spec 4.12) and calls [onDone].
  */
 @Composable
 fun OnboardingScreen(onDone: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var finished by remember { mutableStateOf(false) }
+    var askedToNotify by rememberSaveable { mutableStateOf(false) }
+
+    val finish: () -> Unit = {
+        if (!finished) {
+            finished = true
+            scope.launch {
+                viewModel.completeOnboarding()
+                onDone()
+            }
+        }
+    }
+    // Granted or not, onboarding ends: without it Hub simply shows no badge.
+    val notificationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { finish() }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (finished || !hasListenerAccess(context)) return@LifecycleEventEffect
-        finished = true
-        scope.launch {
-            viewModel.completeOnboarding()
-            onDone()
+        if (!hasListenerAccess(context)) return@LifecycleEventEffect
+        if (!askedToNotify && needsNotificationPermission(context)) {
+            askedToNotify = true
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            finish()
         }
     }
 
@@ -132,6 +157,11 @@ fun OnboardingScreen(onDone: () -> Unit, viewModel: SettingsViewModel = hiltView
         }
     }
 }
+
+private fun needsNotificationPermission(context: Context): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+        PackageManager.PERMISSION_GRANTED
 
 @Composable
 private fun Chevron() {
