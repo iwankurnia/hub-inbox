@@ -3,6 +3,9 @@ package com.iwankurnia.hub.ui.hub
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -68,5 +71,48 @@ class SwipeRowTest {
 
         assertEquals(0, reads)
         assertEquals(0, deletes)
+    }
+    /**
+     * The Undo bug Iwan hit (2026-11-01): LazyColumn keeps each keyed row's saved state while the row is
+     * gone, so a deleted row restored by Undo came back with its swipe state still dismissed and deleted
+     * itself again. [SaveableStateHolder] is what LazyColumn wraps rows in; the row must delete once.
+     */
+    @Test
+    fun swipeLeft_thenRowRemovedAndRestoredUnderSameKey_deletesOnce() {
+        val visible = mutableStateOf(true)
+        compose.setContent {
+            HubTheme(dynamicColor = false) {
+                val holder = rememberSaveableStateHolder()
+                if (visible.value) {
+                    holder.SaveableStateProvider("row-1") {
+                        SwipeRow(
+                            readEnabled = true,
+                            stayAfterRead = true,
+                            gesturesEnabled = true,
+                            onRead = { reads++ },
+                            onDelete = {
+                                deletes++
+                                visible.value = false
+                            },
+                        ) {
+                            Box(Modifier.fillMaxWidth().height(56.dp).testTag("row"))
+                        }
+                    }
+                }
+            }
+        }
+
+        compose.onNodeWithTag("row").performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertEquals(1, deletes)
+
+        // Undo: the same row comes back under the same key.
+        compose.runOnIdle { visible.value = true }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
+
+        assertEquals("the restored row deleted itself again", 1, deletes)
+        compose.onNodeWithTag("row").assertExists()
     }
 }

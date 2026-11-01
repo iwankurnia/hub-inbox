@@ -17,7 +17,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxDefaults
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -26,6 +27,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,37 +55,52 @@ fun SwipeRow(
 ) {
     val scope = rememberCoroutineScope()
     val currentOnRead by rememberUpdatedState(onRead)
+    val currentOnDelete by rememberUpdatedState(onDelete)
     // confirmValueChange fires several times while one gesture settles; one toggle per gesture.
     val togglePending = remember { AtomicBoolean(false) }
-    val state = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.StartToEnd) {
-                // The toggle is performed here and the dismissed state is refused, so the row springs
-                // back and the callback can never replay when the list changes later. A short pause
-                // lets the reveal register before the row's look changes.
-                if (togglePending.compareAndSet(false, true)) {
-                    scope.launch {
-                        try {
-                            delay(TOGGLE_DELAY_MS)
-                            currentOnRead()
-                        } finally {
-                            togglePending.set(false)
+    val density = LocalDensity.current
+    val positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold
+    // Plain remember, not rememberSaveable: LazyColumn keeps a keyed row's saved state while the row is
+    // gone, so a deleted row restored by Undo came back already dismissed and deleted itself again
+    // (Iwan, 2026-11-01). A row that re-enters the list must always start settled.
+    @Suppress("DEPRECATION")
+    val state = remember(density) {
+        SwipeToDismissBoxState(
+            initialValue = SwipeToDismissBoxValue.Settled,
+            density = density,
+            confirmValueChange = { value ->
+                if (value == SwipeToDismissBoxValue.StartToEnd) {
+                    // The toggle is performed here and the dismissed state is refused, so the row springs
+                    // back and the callback can never replay when the list changes later. A short pause
+                    // lets the reveal register before the row's look changes.
+                    if (togglePending.compareAndSet(false, true)) {
+                        scope.launch {
+                            try {
+                                delay(TOGGLE_DELAY_MS)
+                                currentOnRead()
+                            } finally {
+                                togglePending.set(false)
+                            }
                         }
                     }
+                    false
+                } else {
+                    true
                 }
-                false
-            } else {
-                true
-            }
-        },
-    )
+            },
+            positionalThreshold = positionalThreshold,
+        )
+    }
+    // One lambda for the row's life: SwipeToDismissBox restarts its dismiss effect whenever onDismiss
+    // changes identity, and would call it again for a row still sitting in the dismissed position.
+    val onDismiss = remember {
+        { value: SwipeToDismissBoxValue -> if (value == SwipeToDismissBoxValue.EndToStart) currentOnDelete() }
+    }
     SwipeToDismissBox(
         state = state,
         enableDismissFromStartToEnd = readEnabled,
         gesturesEnabled = gesturesEnabled,
-        onDismiss = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onDelete()
-        },
+        onDismiss = onDismiss,
         backgroundContent = {
             SwipeReveal(direction = state.dismissDirection, armed = state.targetValue != SwipeToDismissBoxValue.Settled, toUnread = isRead)
         },
