@@ -166,3 +166,53 @@ the fallback tile, so nothing became unused. The greyscale filter on read rows i
 3. With "Keep the status bar clear" on, a notification Hub skips (an excluded app, a silent one while
    hiding silent ones, or an ongoing one) is deliberately left in the shade, because only captured
    items are cancelled.
+
+## Fix report (after review, 2026-11-01)
+
+| SHA | Subject | Suite after |
+|---|---|---|
+| `741cbbe` | fix(capture): keep the content intent when Hub clears the shade | 95 |
+| `f09c6e1` | refactor(icon): drop the synchronous iconBitmap; add a cache peek | 95 |
+| `acb7a41` | fix(list): show cached app icons on the first frame | 95 |
+| `be2395d` | fix(badge): post the badge once the permission is granted | 96 |
+
+Each commit was gated with `./gradlew :app:assembleDebug :app:testDebugUnitTest`. I checked
+`f09c6e1` on its own, with the next change stashed. **Final: BUILD SUCCESSFUL, 96 tests in 20
+classes, 0 failures, 0 errors, 0 skipped.**
+
+1. **(Important) Clear-shade kept the deep link.**
+   - `HubListenerService` keeps `clearedForShade`, a `ConcurrentHashMap.newKeySet()`. A key is added
+     just before the shade-option cancel.
+   - In `onNotificationRemoved`, a `REASON_LISTENER_CANCEL` removal of a key in that set takes the
+     key out and skips `registry.unregister`. The skip is one-shot. Every other removal still
+     unregisters, including Hub's cancels after a read or open.
+   - **My call on the leak: an LRU cap.** `LiveActionsRegistry` is now an access-ordered
+     `LinkedHashMap`, synchronised and capped at `MAX_ENTRIES = 500` with the least recently used
+     entry evicted. A re-post still overwrites its entry. I chose this over a `forget(key)` from the
+     delete and purge paths for two reasons. It bounds every way an entry can outlive its
+     notification, not only the shade option. And it needs no new repository-to-registry dependency.
+   - Tests:
+     - `posted_withClearShade_cancelsAfterCapture` now delivers `REASON_LISTENER_CANCEL` after the
+       cancel. It asserts `openContent` is still true and nothing was marked read. I watched it fail
+       without the fix.
+     - The new `removal_userCancel_stillUnregisters` covers a user swipe, a listener cancel Hub did
+       not make for the shade option, and a second listener cancel of a shade-cleared key.
+     - The new `LiveActionsRegistryTest.register_beyondTheCap_evictsTheLeastRecentlyUsed`.
+2. **(Minor) Flicker.**
+   - `rememberAppIcon` seeds `produceState` from `AppIconCache.cachedBitmap(pkg, sizePx)`, held in a
+     `remember` per package and size. When it finds a bitmap it does not load again.
+   - Only icons that have never been drawn pass through the letter tile.
+   - There is no automated test. Showing it would need a Compose frame-timing test, which is not
+     worth the cost here.
+3. **(Minor) Main-thread contract.**
+   - Nothing in `app/src/main` called the synchronous `iconBitmap`, so I removed it rather than adding
+     a `check`. Drawing now only happens in `iconBitmapOnMain`.
+   - The new `cachedBitmap` only peeks at the cache and never draws.
+   - `AppIconCacheTest.iconBitmap_isCachedPerSize` now uses `cachedBitmap` and `iconBitmapOnMain`.
+4. **(Minor) Badge after a late permission grant.**
+   - `UnreadBadge.refresh()` bumps a counter that is combined into the collected flow. That re-shows
+     the current count even when it has not changed.
+   - `MainActivity.onResume` calls it through `dagger.Lazy`.
+   - Test: `UnreadBadgeTest.refresh_postsOncePermissionIsGranted`.
+
+No new concerns. The deferred items are left as the review said.
